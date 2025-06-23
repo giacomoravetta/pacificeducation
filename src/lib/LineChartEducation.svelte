@@ -2,37 +2,29 @@
 	import { scaleLinear, scaleOrdinal } from 'd3';
 	import { area, curveLinear, line } from 'd3';
 	import { extent, max, min, group } from 'd3';
-	import EnabledOptions from './EnabledOptions.svelte';
 
-	let { data, appState } = $props();
+	const { appState, data } = $props();
 
 	let selectedPoint = $state({});
 
-	const getDataOptions = (data) => {
-		const sex_opt = [...new Set(data.map((d) => d['SEX']))];
-		const cb_opt = [...new Set(data.map((d) => d['COMPOSITE_BREAKDOWN']))];
-		const edu_opt = [...new Set(data.map((d) => d['EDUCATION']))];
-		console.log(sex_opt, cb_opt, edu_opt);
-	};
-
 	const filteredData = $derived.by(() => {
-		const filteredData = data.filter(
+		const filteredData = data.skills.filter(
 			(d) =>
 				appState.selectedIslands.map((island) => island).includes(d.GEO_PICT) &&
 				d.COMPOSITE_BREAKDOWN == 'SKILL_MIN_LTRCY' &&
 				d.SEX == '_T' &&
-				d.EDUCATION == '1_y4'
+				d.EDUCATION == '1_y6'
 		);
 		return filteredData;
 	});
 
-	let graphWidth = $state();
+	let graphWidth = $state(0);
 
 	const groupedData = $derived.by(() => {
 		return Array.from(group(filteredData, (d) => d.GEO_PICT));
 	});
 
-	const margin = { top: 40, right: 20, left: 20, bottom: 50 };
+	const margin = { top: 40, right: 30, left: 30, bottom: 50 };
 	let computedGraphWidth = $derived(graphWidth * 0.8 + margin.left + margin.right);
 	const graphHeight = 400;
 
@@ -86,10 +78,7 @@
 	}
 </script>
 
-<div
-	class="flex min-h-full w-[80%] flex-col items-center justify-center p-3"
-	bind:clientWidth={graphWidth}
->
+<div class="flex w-[80%] flex-col items-center justify-center p-3" bind:clientWidth={graphWidth}>
 	<div class="flex w-full items-center justify-between pr-8">
 		<h2 class="font-gray-600 font-semibold">Education Data by Island</h2>
 		<div class="text-sm text-gray-500">
@@ -117,20 +106,21 @@
 			{#each xScale.ticks().slice(1) as tick}
 				<line
 					stroke="blue"
-					stroke-width="0.1"
+					opacity="0.2"
+					stroke-dasharray="5"
 					x1={xScale(tick)}
 					x2={xScale(tick)}
 					y2={-graphHeight + margin.top + margin.bottom}
 					y1={0}
 				/>
 			{/each}
-			{#each xScale.ticks(5) as tick}
+			{#each xScale.ticks() as tick}
 				<text
 					font-size="11px"
 					fill="blue"
 					text-anchor="middle"
-					x={xScale(tick)}
-					y={20}
+					x={xScale(tick) + 10}
+					y={20 + 2}
 					transform="rotate(90, {xScale(tick)}, 20)"
 				>
 					{tick}
@@ -144,20 +134,19 @@
 				<line
 					stroke="blue"
 					opacity="0.2"
+					stroke-dasharray="5"
 					x1={margin.left}
 					x2={computedGraphWidth - margin.right}
 					y1={yScale(tick)}
 					y2={yScale(tick)}
 				/>
-				<!-- Background rectangle -->
-
 				<!-- Text on top -->
 				<text
 					fill="blue"
 					text-anchor="middle"
 					font-size="11px"
 					dominant-baseline="middle"
-					x={0}
+					x={-10}
 					y={yScale(tick)}
 					font-weight="600"
 				>
@@ -208,8 +197,6 @@
 			{/key}
 		{/each}
 	</svg>
-
-	<EnabledOptions />
 </div>
 
 <style>

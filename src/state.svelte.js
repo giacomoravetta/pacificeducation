@@ -1,6 +1,7 @@
 import { csv, autoType } from 'd3';
 
-const dataPath = '/data/combined_data.csv';
+const dataPathEducation = '/data/combined_data.csv';
+const dataPathFactors = '/data/SE_ORE_PARTN_filtered.csv';
 
 const islandsIndicators = {
 	PF: 'French Polynesia',
@@ -23,21 +24,22 @@ const islandsIndicators = {
 
 const loadData = async () => {
 	try {
-		const csvData = await csv(dataPath, autoType);
+		const csvDataSkills = await csv(dataPathEducation, autoType);
+		const csvDataFactors = await csv(dataPathFactors, autoType);
 
-		const updatedCsvData = csvData.map((d) => {
+		const updatedCsvDataSkills = csvDataSkills.map((d) => {
 			d.GEO_PICT = islandsIndicators[d.GEO_PICT];
 			return d;
 		});
-		return updatedCsvData;
+		return { skills: updatedCsvDataSkills, factors: csvDataFactors };
 	} catch (error) {
 		console.error('Error loading CSV:', error);
-
-		return [];
+		return { skills: [], factors: [] };
 	}
 };
 
-export const dataState = $state(await loadData());
+export const dataState = $state({ skills: [], factors: [] });
+
 export const appState = $state({
 	optionsIslands: [],
 	selectedIslands: [],
@@ -60,3 +62,10 @@ export const appState = $state({
 		Tuvalu: '#06B6D4' // Cyan
 	}
 });
+
+loadData().then((data) => {
+	dataState.skills = data.skills;
+	dataState.factors = data.factors;
+});
+
+console.log(dataState.skills.length);

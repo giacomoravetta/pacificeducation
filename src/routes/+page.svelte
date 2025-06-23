@@ -3,22 +3,22 @@
 
 	import IslandsSelector from '$lib/IslandsSelector.svelte';
 	import LineChartEducation from '$lib/LineChartEducation.svelte';
-
-	const data = $state.snapshot(dataState);
-
-	const islands = [...new Set(data.map((d) => d.GEO_PICT))];
+	import EnabledOptions from '$lib/EnabledOptions.svelte';
+	const islands = dataState.skills ? [...new Set(dataState.skills.map((d) => d.GEO_PICT))] : [];
 </script>
 
-<svelte:window
-	onresize={() => {
-		console.log('ciao');
-	}}
-/>
+{#if dataState.skills.length > 0}
+	<div
+		class="flex h-[1000dvh] w-screen flex-col items-center justify-between overflow-hidden bg-yellow-50"
+	>
+		<LineChartEducation data={dataState} {appState} />
 
-<div class="flex h-screen w-screen flex-col items-center justify-center bg-yellow-50">
-	<LineChartEducation {data} {appState} />
+		{#if appState.optionsIslands.length > 0}
+			<EnabledOptions />
+		{/if}
 
-	<div class="flex w-screen items-center justify-center">
-		<IslandsSelector {islands} {appState} />
+		<div class="flex w-screen items-center justify-center">
+			<IslandsSelector {islands} {appState} />
+		</div>
 	</div>
-</div>
+{/if}
