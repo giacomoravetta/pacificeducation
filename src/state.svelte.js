@@ -31,17 +31,25 @@ const loadData = async () => {
 			d.GEO_PICT = islandsIndicators[d.GEO_PICT];
 			return d;
 		});
-		return { skills: updatedCsvDataSkills, factors: csvDataFactors };
+		const updatedCsvDataFactors = csvDataFactors.map((d) => {
+			d.GEO_PICT = islandsIndicators[d.GEO_PICT];
+			return d;
+		});
+		return { skills: updatedCsvDataSkills, factors: updatedCsvDataFactors };
 	} catch (error) {
 		console.error('Error loading CSV:', error);
 		return { skills: [], factors: [] };
 	}
 };
 
-export const dataState = $state({ skills: [], factors: [] });
+const data = await loadData();
+
+export const appData = $state(data);
 
 export const appState = $state({
-	optionsIslands: [],
+	selectedSexes: [],
+	selectedEducation: [],
+	selectedSkills: [],
 	selectedIslands: [],
 	colorsIslands: {
 		'French Polynesia': '#0891B2', // Deep Ocean Blue
@@ -62,10 +70,3 @@ export const appState = $state({
 		Tuvalu: '#06B6D4' // Cyan
 	}
 });
-
-loadData().then((data) => {
-	dataState.skills = data.skills;
-	dataState.factors = data.factors;
-});
-
-console.log(dataState.skills.length);
