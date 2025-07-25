@@ -81,6 +81,7 @@
 				appState.selectedSkills = appState.selectedSkills.filter(
 					(skill) => skill !== selectedOption
 				);
+				appState.selectedIslands = [];
 			} else {
 				appState.selectedSkills = [...appState.selectedSkills, selectedOption];
 			}
@@ -91,6 +92,7 @@
 				appState.selectedEducation = appState.selectedEducation.filter(
 					(skill) => skill !== selectedOption
 				);
+				appState.selectedIslands = [];
 			} else {
 				appState.selectedEducation = [...appState.selectedEducation, selectedOption];
 			}
@@ -99,6 +101,7 @@
 
 			if (isSelected) {
 				appState.selectedSexes = appState.selectedSexes.filter((skill) => skill !== selectedOption);
+				appState.selectedIslands = [];
 			} else {
 				appState.selectedSexes = [...appState.selectedSexes, selectedOption];
 			}
@@ -107,7 +110,7 @@
 </script>
 
 <div
-	class="no-scrollbar flex w-full flex-row items-center justify-start gap-3 overflow-x-scroll bg-blue-500/20 p-4"
+	class="no-scrollbar flex w-full flex-row items-center justify-start gap-3 overflow-x-scroll p-4"
 >
 	{#each skills as skill}
 		<div

@@ -23,10 +23,6 @@
 
 		console.log('Starting animation with:', { videoBox, innerWidth, innerHeight });
 
-		// Clear any existing animations first
-		gsap.killTweensOf('.turtle-video');
-		tl.clear();
-
 		const startX = -videoBox.width / 2;
 		const startY = innerHeight / 2;
 		const endX = innerWidth / 2 - videoBox.width / 2;
@@ -74,6 +70,7 @@
 	$effect(() => {
 		if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
 			console.log('All conditions met, starting animation');
+
 			startAnimation(tl);
 		}
 	});

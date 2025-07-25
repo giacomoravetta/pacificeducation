@@ -1,19 +1,21 @@
 <script lang="ts">
-	import { scaleLinear, scaleOrdinal } from 'd3';
+	import { scaleLinear } from 'd3';
 	import { area, curveLinear, line } from 'd3';
 	import { extent, max, min, group } from 'd3';
 
-	const { appState, data } = $props();
+	import { appData } from '../state.svelte.js';
+
+	let { optionsState } = $props();
 
 	let selectedPoint = $state({});
 
 	const filteredData = $derived.by(() => {
-		const filteredData = data.skills.filter(
+		const filteredData = appData.skills.filter(
 			(d) =>
-				appState.selectedIslands.map((island) => island).includes(d.GEO_PICT) &&
-				d.COMPOSITE_BREAKDOWN == 'SKILL_MIN_LTRCY' &&
-				d.SEX == '_T' &&
-				d.EDUCATION == '1_y6'
+				optionsState.selectedIslands.includes(d.GEO_PICT) &&
+				optionsState.selectedSkills.includes(d.COMPOSITE_BREAKDOWN) &&
+				optionsState.selectedSexes.includes(d.SEX) &&
+				optionsState.selectedEducation.includes(d.EDUCATION)
 		);
 		return filteredData;
 	});
@@ -24,20 +26,14 @@
 		return Array.from(group(filteredData, (d) => d.GEO_PICT));
 	});
 
-	const margin = { top: 40, right: 30, left: 30, bottom: 50 };
-	let computedGraphWidth = $derived(graphWidth * 0.8 + margin.left + margin.right);
+	const margin = { top: 40, right: 40, left: 40, bottom: 50 };
+	let computedGraphWidth = $derived(graphWidth - margin.right);
 	const graphHeight = 400;
-
-	$effect(() => {
-		console.log(data);
-		console.log(filteredData);
-		console.log('Grouped data:', groupedData);
-	});
 
 	let xScale = $derived(
 		scaleLinear()
 			.domain(extent(filteredData, (d) => d['TIME_PERIOD']))
-			.range([margin.left + margin.right, computedGraphWidth])
+			.range([margin.left * 2, graphWidth - margin.right])
 	);
 
 	let yScale = $derived(
@@ -54,7 +50,7 @@
 	};
 
 	// Create a unique key that changes when selection changes to trigger re-animation
-	const animationKey = $derived(`${appState.selectedIslands.length}-${Date.now()}`);
+	const animationKey = $derived(`${optionsState.selectedIslands.length}-${Date.now()}`);
 
 	// Svelte action to animate path drawing with correct path length
 	function animatePath(node, delay = 0) {
@@ -78,18 +74,20 @@
 	}
 </script>
 
-<div class="flex w-[80%] flex-col items-center justify-center p-3" bind:clientWidth={graphWidth}>
-	<div class="flex w-full items-center justify-between pr-8">
+<div class="flex w-full flex-col items-center justify-center" bind:clientWidth={graphWidth}>
+	<div class="flex w-full items-center justify-between">
 		<h2 class="font-gray-600 font-semibold">Education Data by Island</h2>
 		<div class="text-sm text-gray-500">
-			{appState.selectedIslands.length} island{appState.selectedIslands.length !== 1 ? 's' : ''} selected
+			{optionsState.selectedIslands.length} island{optionsState.selectedIslands.length !== 1
+				? 's'
+				: ''} selected
 		</div>
 	</div>
 
 	{#if selectedPoint.data}
 		<div
 			class="absolute flex flex-col rounded-xl p-3"
-			style="background-color: {appState.colorsIslands[
+			style="background-color: {optionsState.colorsIslands[
 				selectedPoint.data.GEO_PICT
 			]}99; top: {selectedPoint.y + 10}px; left: {selectedPoint.x > window.innerWidth / 2
 				? selectedPoint.x - 20
@@ -100,7 +98,7 @@
 		</div>
 	{/if}
 
-	<svg width={computedGraphWidth + margin.right} height={graphHeight}>
+	<svg width={computedGraphWidth + margin.left} height={graphHeight}>
 		<!-- X Axis -->
 		<g transform="translate(0,{graphHeight - margin.bottom})">
 			{#each xScale.ticks().slice(1) as tick}
@@ -114,14 +112,14 @@
 					y1={0}
 				/>
 			{/each}
-			{#each xScale.ticks() as tick}
+			{#each xScale.ticks(5) as tick}
 				<text
 					font-size="11px"
 					fill="blue"
 					text-anchor="middle"
 					x={xScale(tick) + 10}
-					y={20 + 2}
-					transform="rotate(90, {xScale(tick)}, 20)"
+					y={28}
+					transform="rotate(45, {xScale(tick)}, 20)"
 				>
 					{tick}
 				</text>
@@ -156,45 +154,43 @@
 		</g>
 
 		{#each groupedData as [islandName, islandData], i}
-			{#key `${islandName}-${animationKey}-${graphWidth}`}
-				<g class="island-group" data-island={islandName}>
-					<!-- Line path with staggered animation -->
-					<path
-						class="line-path"
-						d={generateLinePath(islandData, 'OBS_VALUE')}
-						fill="none"
-						stroke={appState.colorsIslands[islandName]}
-						stroke-width="3"
-						style="--island-index: {i};"
-						use:animatePath={i * 300}
+			<g class="island-group" data-island={islandName}>
+				<!-- Line path with staggered animation -->
+				<path
+					class="line-path"
+					d={generateLinePath(islandData, 'OBS_VALUE')}
+					fill="none"
+					stroke={optionsState.colorsIslands[islandName]}
+					stroke-width="3"
+					style="--island-index: {i};"
+				/>
+
+				<!-- Data points with staggered animations -->
+				{#each islandData as dataPoint, pointIndex}
+					<circle
+						class="data-point"
+						cx={xScale(dataPoint['TIME_PERIOD'])}
+						cy={yScale(dataPoint['OBS_VALUE'])}
+						r="4"
+						fill={optionsState.colorsIslands[islandName]}
+						stroke="white"
+						stroke-width="2"
+						style="--island-index: {i}; --point-index: {pointIndex};"
+						onmouseenter={(e) => {
+							selectedPoint = {
+								x: e.clientX,
+								y: e.clientY,
+								data: dataPoint
+							};
+							console.log($state.snapshot(selectedPoint));
+						}}
+						onmouseout={() => {
+							selectedPoint = {};
+							console.log($state.snapshot(selectedPoint));
+						}}
 					/>
-					<!-- Data points with staggered animations -->
-					{#each islandData as dataPoint, pointIndex}
-						<circle
-							class="data-point"
-							cx={xScale(dataPoint['TIME_PERIOD'])}
-							cy={yScale(dataPoint['OBS_VALUE'])}
-							r="4"
-							fill={appState.colorsIslands[islandName]}
-							stroke="white"
-							stroke-width="2"
-							style="--island-index: {i}; --point-index: {pointIndex};"
-							onmouseenter={(e) => {
-								selectedPoint = {
-									x: e.clientX,
-									y: e.clientY,
-									data: dataPoint
-								};
-								console.log($state.snapshot(selectedPoint));
-							}}
-							onmouseout={() => {
-								selectedPoint = {};
-								console.log($state.snapshot(selectedPoint));
-							}}
-						/>
-					{/each}
-				</g>
-			{/key}
+				{/each}
+			</g>
 		{/each}
 	</svg>
 </div>

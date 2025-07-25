@@ -1,20 +1,36 @@
 <script lang="ts">
 	import { scaleLinear } from 'd3';
-	import { area, curveLinear, line, group, extent } from 'd3';
+	import { area, curveLinear, line } from 'd3';
+	import { extent, max, min, group } from 'd3';
 
-	import { appState, appData } from '../state.svelte.js';
+	import { appState, appData as appData } from '../state.svelte.js';
 
-	const filteredData = $derived.by(() => {
-		const filteredData = appData.factors.filter(
-			(d) => appState.selectedIslands.map((island) => island).includes(d.GEO_PICT) && d.SEX == '_T'
+	let selectedPoint = $state({});
+
+	const skillData = $derived.by(() => {
+		const filteredData = appData.skills.filter(
+			(d) =>
+				appState.selectedIslands.map((island) => island).includes(d.GEO_PICT) &&
+				d.COMPOSITE_BREAKDOWN == 'SKILL_MIN_LTRCY' &&
+				d.SEX == '_T' &&
+				d.EDUCATION == '1_y6'
 		);
 		return filteredData;
 	});
 
+	const factorData = $derived.by(() => {
+		const factorData = appData.factors.filter(
+			(d) => appState.selectedIslands.map((island) => island).includes(d.GEO_PICT) && d.SEX == '_T'
+		);
+		return factorData;
+	});
+
+	const totalData = $derived(skillData.concat(factorData));
+
 	let graphWidth = $state(0);
 
 	const groupedData = $derived.by(() => {
-		return Array.from(group(filteredData, (d) => d.GEO_PICT));
+		return Array.from(group(skillData, (d) => d.GEO_PICT));
 	});
 
 	const margin = { top: 40, right: 30, left: 30, bottom: 50 };
@@ -23,7 +39,7 @@
 
 	let xScale = $derived(
 		scaleLinear()
-			.domain(extent(filteredData, (d) => d['TIME_PERIOD']))
+			.domain(extent(totalData, (d) => d['TIME_PERIOD']))
 			.range([margin.left + margin.right, computedGraphWidth])
 	);
 
@@ -32,6 +48,13 @@
 			.domain([0, 100])
 			.range([graphHeight - margin.bottom, margin.top])
 	);
+
+	const generateLinePath = (islandData, yField) => {
+		return line()
+			.x((d) => xScale(d['TIME_PERIOD']))
+			.y((d) => yScale(+d[yField]))
+			.curve(curveLinear)(islandData);
+	};
 
 	// Fixed area generator
 	const generateArea = $derived(
@@ -42,29 +65,57 @@
 			.curve(curveLinear)
 	);
 
-	// Line generator for the existing line paths
-	const generateLinePath = (data, valueKey) => {
-		const lineGenerator = line()
-			.x((d) => xScale(d['TIME_PERIOD']))
-			.y((d) => yScale(d[valueKey]))
-			.curve(curveLinear);
-
-		return lineGenerator(data);
-	};
-
 	// Generate area path for a dataset
 	const generateAreaPath = (data) => {
 		return generateArea(data);
 	};
+
+	// Create a unique key that changes when selection changes to trigger re-animation
+	const animationKey = $derived(`${appState.selectedIslands.length}-${Date.now()}`);
+
+	// Svelte action to animate path drawing with correct path length
+	function animatePath(node, delay = 0) {
+		const pathLength = node.getTotalLength();
+
+		// Set up the starting positions with actual path length
+		node.style.strokeDasharray = pathLength.toString();
+		node.style.strokeDashoffset = pathLength.toString();
+
+		// Animate after delay
+		const timeout = setTimeout(() => {
+			node.style.transition = 'stroke-dashoffset 2s ease-in-out';
+			node.style.strokeDashoffset = '0';
+		}, delay);
+
+		return {
+			destroy() {
+				clearTimeout(timeout);
+			}
+		};
+	}
 </script>
 
 <div class="flex w-[80%] flex-col items-center justify-center p-3" bind:clientWidth={graphWidth}>
 	<div class="flex w-full items-center justify-between pr-8">
-		<h2 class="font-gray-600 font-semibold">Education Data by Island</h2>
+		<h2 class="font-gray-600 font-semibold">Correlation Data by Island</h2>
 		<div class="text-sm text-gray-500">
 			{appState.selectedIslands.length} island{appState.selectedIslands.length !== 1 ? 's' : ''} selected
 		</div>
 	</div>
+
+	{#if selectedPoint.data}
+		<div
+			class="absolute flex flex-col rounded-xl p-3"
+			style="background-color: {appState.colorsIslands[
+				selectedPoint.data.GEO_PICT
+			]}99; top: {selectedPoint.y + 10}px; left: {selectedPoint.x > window.innerWidth / 2
+				? selectedPoint.x - 20
+				: selectedPoint.x + 10}px;"
+		>
+			<span>{selectedPoint.data.GEO_PICT}</span>
+			<span>{selectedPoint.data.OBS_VALUE}%</span>
+		</div>
+	{/if}
 
 	<svg width={computedGraphWidth + margin.right} height={graphHeight}>
 		<!-- X Axis -->
@@ -106,6 +157,7 @@
 					y1={yScale(tick)}
 					y2={yScale(tick)}
 				/>
+				<!-- Text on top -->
 				<text
 					fill="blue"
 					text-anchor="middle"
@@ -125,7 +177,7 @@
 				<!-- Area path (rendered behind the line) -->
 				<path
 					class="area-path"
-					d={generateAreaPath(islandData)}
+					d={generateAreaPath(factorData)}
 					fill={appState.colorsIslands[islandName]}
 					fill-opacity="0.3"
 					stroke="none"
@@ -182,10 +234,6 @@
 		r: 6;
 	}
 
-	.island-group:hover .area-path {
-		fill-opacity: 0.5;
-	}
-
 	/* Fade other islands when one is hovered */
 	.island-group:not(:hover) {
 		opacity: 0.4;
@@ -197,13 +245,8 @@
 
 	.line-path {
 		opacity: 0.9;
+		/* Remove fixed stroke-dasharray - will be set by JavaScript */
 		transition-property: opacity, stroke-width;
-		transition-duration: 200ms;
-		transition-timing-function: ease-in-out;
-	}
-
-	.area-path {
-		transition-property: fill-opacity;
 		transition-duration: 200ms;
 		transition-timing-function: ease-in-out;
 	}
