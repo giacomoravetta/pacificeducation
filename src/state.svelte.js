@@ -1,7 +1,6 @@
 import { csv, autoType } from 'd3';
 
-const dataPathEducation = '/data/combined_data.csv';
-const dataPathFactors = '/data/SE_ORE_PARTN_filtered.csv';
+const dataPathFactors = '/data/factors.csv';
 
 const islandsIndicators = {
 	PF: 'French Polynesia',
@@ -24,7 +23,10 @@ const islandsIndicators = {
 
 const loadData = async () => {
 	try {
-		const csvDataSkills = await csv(dataPathEducation, autoType);
+		const csvDataSkills = await csv(
+			'https://raw.githubusercontent.com/giacomoravetta/pacificeducation/refs/heads/master/static/data/combined_data_islands_skills.csv',
+			autoType
+		);
 		const csvDataFactors = await csv(dataPathFactors, autoType);
 
 		const updatedCsvDataSkills = csvDataSkills.map((d) => {
