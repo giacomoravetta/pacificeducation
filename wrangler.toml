@@ -1,3 +1,0 @@
-name = "pacificeducation"
-compatibility_date = "2025-07-25"
-main = ".svelte-kit/cloudflare/index.js"
