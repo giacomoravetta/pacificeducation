@@ -9,6 +9,6 @@
 	},
 	"assets": {
 		"binding": "ASSETS",
-		"directory": "assets"
+		"directory": "src/assets"
 	}
 }
