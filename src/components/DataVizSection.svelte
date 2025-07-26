@@ -4,7 +4,7 @@
 </script>
 
 <section id="dataviz-section" class="w-full">
-	<div class="bg-yellow- flex w-full flex-col bg-yellow-50 p-10">
+	<div class="bg-yellow- md: flex w-full flex-col bg-yellow-50 p-2 md:p-10">
 		<EducationSection />
 		<CompareEducationSection />
 	</div>
