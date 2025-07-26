@@ -9,6 +9,6 @@
 	},
 	"assets": {
 		"binding": "ASSETS",
-		"directory": "src/assets"
+		"directory": ".svelte-kit/cloudflare"
 	}
 }

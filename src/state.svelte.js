@@ -1,6 +1,6 @@
 import { csv, autoType } from 'd3';
 
-const dataPathFactors = 'src/assets/data/factors.csv';
+const dataPathFactors = '/data/factors.csv';
 
 const islandsIndicators = {
 	PF: 'French Polynesia',
