@@ -110,7 +110,7 @@
 	<div class="absolute inset-0 z-10 overflow-hidden">
 		<video
 			bind:contentRect={videoBox}
-			src="Turtle_Transparent.webm"
+			src="assets/TurtleTransparent.webm"
 			autoplay
 			loop
 			muted
