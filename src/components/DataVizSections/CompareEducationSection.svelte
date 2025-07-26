@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { appData } from '../../state.svelte';
-	import LineChartEducationCompare from '$lib/LineChartEducationCompare.svelte';
-	import OptionsSelectorCompare from '$lib/OptionsSelectorCompare.svelte';
+	import LineChartEducationCompare from './DataVizComponents/CompareEducation/LineChartEducationCompare.svelte';
+	import OptionsSelectorCompare from './DataVizComponents/CompareEducation/OptionsSelectorCompare.svelte';
 
 	let firstOptionsState = $state({
 		selectedSexes: [],

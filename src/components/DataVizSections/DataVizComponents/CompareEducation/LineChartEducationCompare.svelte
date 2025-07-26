@@ -3,7 +3,7 @@
 	import { area, curveLinear, line } from 'd3';
 	import { extent, max, min, group } from 'd3';
 
-	import { appData } from '../state.svelte.js';
+	import { appData } from '../../../../state.svelte';
 
 	// Updated props destructuring following Svelte 5 best practices
 	let { firstOptionsState, secondOptionsState } = $props();

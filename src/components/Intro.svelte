@@ -1,6 +1,17 @@
 <script lang="ts">
 	import { gsap } from 'gsap';
+	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
+
+	gsap.registerPlugin(ScrollToPlugin);
+
+	const handleClick = (section: string) => {
+		gsap.to(window, {
+			duration: 2,
+			scrollTo: `#${section}`,
+			ease: 'power2.inOut'
+		});
+	};
 
 	let innerWidth = $state();
 	let innerHeight = $state();
@@ -40,9 +51,9 @@
 				// TO state - end values with timing
 				x: endX,
 				y: innerHeight / 2 - videoBox.height / 2,
-				scale: 1.5,
+				scale: 1.3,
 				opacity: 1,
-				duration: 30,
+				duration: 40,
 				ease: 'sine.out'
 			}
 		).to('.turtle-video', {
@@ -212,6 +223,9 @@
 			<!-- Call-to-action buttons -->
 			<div class="mb-16 flex flex-col gap-4 sm:flex-row">
 				<button
+					onclick={() => {
+						handleClick('dataviz-section');
+					}}
 					class="inline-flex transform items-center rounded-full bg-white px-8 py-4 font-semibold text-blue-600 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-50 hover:shadow-xl"
 				>
 					<svg class="mr-2 size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,17 +319,6 @@
 
 	.animate-gradient-x {
 		animation: gradient-x 4s ease infinite;
-	}
-
-	.ocean-background {
-		background: linear-gradient(
-			135deg,
-			#1e3a8a 0%,
-			#1e40af 25%,
-			#2563eb 50%,
-			#3b82f6 75%,
-			#60a5fa 100%
-		);
 	}
 
 	.turtle-video {

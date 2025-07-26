@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { appData } from '../state.svelte';
+	import { appData } from '../../../../state.svelte';
 
 	let { optionsState, onSkillToggle, onEducationToggle, onSexToggle, onIslandToggle } = $props<{
 		optionsState: {
@@ -211,7 +211,6 @@
 			}
 		};
 
-		// Using $effect for Svelte 5 lifecycle management
 		$effect(() => {
 			node.addEventListener('mousedown', handleMouseDown);
 			node.addEventListener('mouseleave', handleMouseLeave);
@@ -390,11 +389,6 @@
 	/* Disabled buttons should not have pointer cursor */
 	.no-scrollbar button:disabled {
 		cursor: not-allowed;
-	}
-
-	/* Cursor styles for drag scrolling */
-	.cursor-grabbing {
-		cursor: grabbing !important;
 	}
 
 	.cursor-grab:active {

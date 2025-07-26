@@ -3,7 +3,7 @@
 	import { area, curveLinear, line } from 'd3';
 	import { extent, max, min, group } from 'd3';
 
-	import { appData } from '../state.svelte.js';
+	import { appData } from '../../../../state.svelte';
 
 	let { optionsState } = $props();
 
@@ -101,7 +101,10 @@
 	<svg width={computedGraphWidth + margin.left} height={graphHeight}>
 		<!-- X Axis -->
 		<g transform="translate(0,{graphHeight - margin.bottom})">
-			{#each xScale.ticks().slice(1) as tick}
+			{#each xScale
+				.ticks()
+				.slice(1)
+				.filter((tick) => Number.isInteger(tick)) as tick}
 				<line
 					stroke="blue"
 					opacity="0.2"
@@ -112,7 +115,7 @@
 					y1={0}
 				/>
 			{/each}
-			{#each xScale.ticks(5) as tick}
+			{#each xScale.ticks(5).filter((tick) => Number.isInteger(tick)) as tick}
 				<text
 					font-size="11px"
 					fill="blue"
@@ -138,7 +141,7 @@
 					y1={yScale(tick)}
 					y2={yScale(tick)}
 				/>
-				<!-- Text on top -->
+
 				<text
 					fill="blue"
 					text-anchor="middle"
@@ -234,7 +237,6 @@
 	.data-point {
 		opacity: 0;
 		animation: fadeInPoint 0.3s ease-out forwards;
-		animation-delay: calc(2s + var(--point-index, 0) * 0.1s + var(--island-index, 0) * 0.3s);
 		transition-property: r, opacity;
 		transition-duration: 200ms;
 		transition-timing-function: ease-in-out;

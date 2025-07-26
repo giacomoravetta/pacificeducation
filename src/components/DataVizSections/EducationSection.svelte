@@ -1,6 +1,6 @@
 <script lang="ts">
-	import LineChartEducationGeneric from '$lib/LineChartEducationGeneric.svelte';
-	import OptionsSelectorGeneric from '$lib/OptionsSelectorGeneric.svelte';
+	import LineChartEducationGeneric from './DataVizComponents/Education/LineChartEducation.svelte';
+	import OptionsSelector from './DataVizComponents/Education/OptionsSelector.svelte';
 	import { appData } from '../../state.svelte';
 
 	let optionsState = $state({
@@ -34,25 +34,23 @@
 
 	const filteredData = $derived.by(() => {
 		return appData.skills.filter((d) => {
-			// Filter by skills - if no skills selected, include all
 			const skillMatch =
 				optionsState.selectedSkills.length === 0 ||
 				optionsState.selectedSkills.includes(d.COMPOSITE_BREAKDOWN);
-			// Filter by education - if no education selected, include all
+
 			const educationMatch =
 				optionsState.selectedEducation.length === 0 ||
 				optionsState.selectedEducation.includes(d.EDUCATION);
-			// Filter by sex - if no sexes selected, include all
+
 			const sexMatch =
 				optionsState.selectedSexes.length === 0 || optionsState.selectedSexes.includes(d.SEX);
-			// Return true only if all conditions match
+
 			return skillMatch && educationMatch && sexMatch;
 		});
 	});
 
 	const islands = $derived([...new Set(filteredData.map((d) => d['GEO_PICT']))]);
 
-	// Callback handlers for the OptionsSelectorGeneric component
 	const handleSkillToggle = (skill: string) => {
 		const isSelected = optionsState.selectedSkills.includes(skill);
 
@@ -62,7 +60,6 @@
 			optionsState.selectedSkills = [...optionsState.selectedSkills, skill];
 		}
 
-		// Clear islands when skills change (based on your original logic)
 		optionsState.selectedIslands = [];
 	};
 
@@ -77,7 +74,6 @@
 			optionsState.selectedEducation = [...optionsState.selectedEducation, education];
 		}
 
-		// Clear islands when education changes
 		optionsState.selectedIslands = [];
 	};
 
@@ -90,7 +86,6 @@
 			optionsState.selectedSexes = [...optionsState.selectedSexes, sex];
 		}
 
-		// Clear islands when sex changes
 		optionsState.selectedIslands = [];
 	};
 
@@ -104,8 +99,6 @@
 		}
 	};
 
-	// You can keep these helper functions if LineChartEducationGeneric needs them
-	// Or pass them as additional props if needed
 	const determineOptionType = (selectedOption: string) => {
 		if (islands.includes(selectedOption)) {
 			return 'island';
@@ -135,9 +128,9 @@
 	};
 </script>
 
-<section class="flex w-full flex-col items-center justify-center gap-5 bg-yellow-50 p-2">
+<section class="flex w-full flex-col items-center justify-center gap-5">
 	<LineChartEducationGeneric {optionsState} />
-	<OptionsSelectorGeneric
+	<OptionsSelector
 		{optionsState}
 		onSkillToggle={handleSkillToggle}
 		onEducationToggle={handleEducationToggle}
