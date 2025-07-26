@@ -1,7 +1,12 @@
+// wrangler.jsonc
 {
 	"name": "pacificeducation",
 	"main": ".svelte-kit/cloudflare/_worker.js",
-	"compatibility_date": "2025-07-25",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"build": {
+		"command": "npm run build"
+	},
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
