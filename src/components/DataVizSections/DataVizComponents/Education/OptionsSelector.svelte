@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { appData } from '../../../../state.svelte';
-	import PersonChalkboardOutline from 'flowbite-svelte-icons/PersonChalkboardOutline.svelte';
-	import UsersOutline from 'flowbite-svelte-icons/UsersOutline.svelte';
-	import SchoolOutline from 'flowbite-svelte-icons/SchoolOutline.svelte';
+
+	import { translate } from '../../../../translate_util';
 
 	interface Props {
 		optionsState: {
@@ -61,7 +60,7 @@
 	// Handler for filter selection
 	const handleFilterClick = (e: MouseEvent) => {
 		const target = e.currentTarget as HTMLElement;
-		const selectedOption = target.innerText.trim();
+		const selectedOption = translate(target.innerText.trim());
 		const optionType = determineOptionType(selectedOption);
 
 		switch (optionType) {
@@ -242,7 +241,7 @@
 						: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
 					"
 				>
-					<span>{skill}</span>
+					<span>{translate(skill)}</span>
 				</button>
 			{/each}
 		</div>
@@ -302,7 +301,7 @@
 
 					"
 				>
-					<span>{education}</span>
+					<span>{translate(education)}</span>
 				</button>
 			{/each}
 		</div>
@@ -360,7 +359,7 @@
 						: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
 					"
 				>
-					<span>{sex}</span>
+					<span>{translate(sex)}</span>
 				</button>
 			{/each}
 		</div>

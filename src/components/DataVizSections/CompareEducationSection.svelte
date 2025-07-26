@@ -231,9 +231,9 @@
 <section class="flex w-full flex-col items-center justify-center bg-yellow-50 p-20">
 	<LineChartEducationCompare {firstOptionsState} {secondOptionsState} />
 
-	<div class="flex w-full gap-2">
+	<div class="flex w-full flex-col gap-2">
 		<!-- First Options Selector -->
-		<div class="w-1/2">
+		<div class="w-full">
 			<h3 class="mb-4 text-lg font-semibold text-blue-600">Dataset 1 Options</h3>
 			<OptionsSelectorCompare
 				optionsState={firstOptionsState}
@@ -245,7 +245,7 @@
 		</div>
 
 		<!-- Second Options Selector -->
-		<div class="w-1/2">
+		<div class="w-full">
 			<h3 class="mb-4 text-lg font-semibold text-red-600">Dataset 2 Options</h3>
 			<OptionsSelectorCompare
 				optionsState={secondOptionsState}

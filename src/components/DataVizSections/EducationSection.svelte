@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LineChartEducationGeneric from './DataVizComponents/Education/LineChartEducation.svelte';
+	import LineChartEducation from './DataVizComponents/Education/LineChartEducation.svelte';
 	import OptionsSelector from './DataVizComponents/Education/OptionsSelector.svelte';
 	import { appData } from '../../state.svelte';
 
@@ -129,7 +129,7 @@
 </script>
 
 <section class="flex w-full flex-col items-center justify-center gap-5">
-	<LineChartEducationGeneric {optionsState} />
+	<LineChartEducation {optionsState} />
 	<OptionsSelector
 		{optionsState}
 		onSkillToggle={handleSkillToggle}
