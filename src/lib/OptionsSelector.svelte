@@ -177,8 +177,8 @@
 
 	const areIslandsEnabled = () => {
 		return (
-			optionsState.selectedSkills.length > 0 ||
-			optionsState.selectedEducation.length > 0 ||
+			optionsState.selectedSkills.length > 0 &&
+			optionsState.selectedEducation.length > 0 &&
 			optionsState.selectedSexes.length > 0
 		);
 	};
