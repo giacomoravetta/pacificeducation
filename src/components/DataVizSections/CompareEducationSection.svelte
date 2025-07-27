@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { appData } from '../../state.svelte';
-	import LineChartEducationCompare from './DataVizComponents/CompareEducation/LineChartEducationCompare.svelte';
-	import OptionsSelectorCompare from './DataVizComponents/CompareEducation/OptionsSelectorCompare.svelte';
+	import OptionsSelector from '$lib/OptionsSelector.svelte';
+	import AreaChartEducationCompare from './DataVizComponents/CompareEducation/AreaChartEducationCompare.svelte';
+
+	import { AccordionItem, Accordion } from 'flowbite-svelte';
 
 	let firstOptionsState = $state({
 		selectedSexes: [],
@@ -179,81 +181,48 @@
 			secondOptionsState.selectedIslands = [...secondOptionsState.selectedIslands, island];
 		}
 	};
-
-	// Helper functions (if needed by other components)
-	const determineOptionType = (selectedOption: string) => {
-		if (islands.includes(selectedOption)) {
-			return 'island';
-		} else if (skills.includes(selectedOption)) {
-			return 'skill';
-		} else if (educationTypes.includes(selectedOption)) {
-			return 'education';
-		} else if (sexes.includes(selectedOption)) {
-			return 'sex';
-		}
-	};
-
-	// Helper functions for first options state
-	const isFirstIslandSelected = (islandName: string) => {
-		return firstOptionsState.selectedIslands.includes(islandName);
-	};
-
-	const isFirstSkillSelected = (skillName: string) => {
-		return firstOptionsState.selectedSkills.includes(skillName);
-	};
-
-	const isFirstEducationSelected = (education: string) => {
-		return firstOptionsState.selectedEducation.includes(education);
-	};
-
-	const isFirstSexSelected = (sex: string) => {
-		return firstOptionsState.selectedSexes.includes(sex);
-	};
-
-	// Helper functions for second options state
-	const isSecondIslandSelected = (islandName: string) => {
-		return secondOptionsState.selectedIslands.includes(islandName);
-	};
-
-	const isSecondSkillSelected = (skillName: string) => {
-		return secondOptionsState.selectedSkills.includes(skillName);
-	};
-
-	const isSecondEducationSelected = (education: string) => {
-		return secondOptionsState.selectedEducation.includes(education);
-	};
-
-	const isSecondSexSelected = (sex: string) => {
-		return secondOptionsState.selectedSexes.includes(sex);
-	};
 </script>
 
-<section class="flex w-full flex-col items-center justify-center bg-yellow-50 p-20">
-	<LineChartEducationCompare {firstOptionsState} {secondOptionsState} />
+<section class="flex w-full flex-col items-center justify-center gap-5">
+	<AreaChartEducationCompare {firstOptionsState} {secondOptionsState} />
 
-	<div class="flex w-full flex-col gap-2">
+	<div class="flex w-full flex-col gap-2 md:flex-row">
 		<!-- First Options Selector -->
-		<div class="w-full">
-			<h3 class="mb-4 text-lg font-semibold text-blue-600">Dataset 1 Options</h3>
-			<OptionsSelectorCompare
-				optionsState={firstOptionsState}
-				onSkillToggle={handleFirstSkillToggle}
-				onEducationToggle={handleFirstEducationToggle}
-				onSexToggle={handleFirstSexToggle}
-				onIslandToggle={handleFirstIslandToggle}
-			/>
-		</div>
 
-		<!-- Second Options Selector -->
-		<div class="w-full">
-			<h3 class="mb-4 text-lg font-semibold text-red-600">Dataset 2 Options</h3>
-			<OptionsSelectorCompare
-				optionsState={secondOptionsState}
-				onSkillToggle={handleSecondSkillToggle}
-				onEducationToggle={handleSecondEducationToggle}
-				onSexToggle={handleSecondSexToggle}
-				onIslandToggle={handleSecondIslandToggle}
-			/>
-		</div>
+		<Accordion
+			class="ocean-background"
+			inactiveClass="ocean-background  hover:bg-white/20 "
+			activeClass="ocean-background "
+		>
+			<AccordionItem class=" rounded-2xl">
+				{#snippet header()}
+					<h3 class=" mb-4 text-lg font-semibold text-white">Dataset 1 Options</h3>{/snippet}
+				<div class="w-full">
+					<OptionsSelector
+						optionsState={firstOptionsState}
+						onSkillToggle={handleFirstSkillToggle}
+						onEducationToggle={handleFirstEducationToggle}
+						onSexToggle={handleFirstSexToggle}
+						onIslandToggle={handleFirstIslandToggle}
+						compare={true}
+					/>
+				</div>
+			</AccordionItem>
+			<AccordionItem class="ocean-background rounded-2xl">
+				{#snippet header()}<h3 class="mb-4 text-lg font-semibold text-white">Dataset 2 Options</h3>
+				{/snippet}
+				<!-- Second Options Selector -->
+				<div class="w-full">
+					<OptionsSelector
+						optionsState={secondOptionsState}
+						onSkillToggle={handleSecondSkillToggle}
+						onEducationToggle={handleSecondEducationToggle}
+						onSexToggle={handleSecondSexToggle}
+						onIslandToggle={handleSecondIslandToggle}
+						compare={true}
+					/>
+				</div>
+			</AccordionItem>
+		</Accordion>
 	</div>
 </section>

@@ -5,9 +5,8 @@
 	import DataVizSection from '../components/DataVizSection.svelte';
 </script>
 
-<div class="flex h-[1000dvh] w-screen flex-col items-center overflow-hidden">
+<div class="flex w-screen flex-col items-center overflow-hidden">
 	<Intro />
-
 	<DataVizSection />
 
 	<!-- <CorrelationsChart /> -->

@@ -208,125 +208,105 @@
 		</div>
 	{/if}
 
-	<!-- Chart -->
 	<div class="w-full">
-		{#if !descriptionData.hasData}
-			<div
-				class="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50"
-			>
-				<div class="text-center">
-					<div class="mb-2 text-gray-400">
-						<svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-							></path>
-						</svg>
-					</div>
-					<p class="font-medium text-gray-600">No data to display</p>
-					<p class="text-sm text-gray-500">Please select filters to view education data</p>
-				</div>
-			</div>
-		{:else}
-			<svg width={computedGraphWidth + margin.left} height={graphHeight} class="overflow-visible">
-				<!-- X Axis -->
-				<g transform="translate(0,{graphHeight - margin.bottom})">
-					{#each xScale
-						.ticks()
-						.slice(1)
-						.filter((tick) => Number.isInteger(tick)) as tick}
-						<line
-							stroke="#e5e7eb"
-							opacity="0.8"
-							stroke-dasharray="2,2"
-							x1={xScale(tick)}
-							x2={xScale(tick)}
-							y2={-graphHeight + margin.top + margin.bottom}
-							y1={0}
-						/>
-					{/each}
-					{#each xScale.ticks(5).filter((tick) => Number.isInteger(tick)) as tick}
-						<text
-							font-size="11px"
-							fill="#6b7280"
-							text-anchor="middle"
-							x={xScale(tick) + 10}
-							y={28}
-							transform="rotate(45, {xScale(tick)}, 20)"
-						>
-							{tick}
-						</text>
-					{/each}
-				</g>
-
-				<!-- Y Axis -->
-				<g transform="translate({margin.left}, 0)">
-					{#each yScale.ticks(5) as tick}
-						<line
-							stroke="#e5e7eb"
-							opacity="0.8"
-							stroke-dasharray="2,2"
-							x1={margin.left}
-							x2={computedGraphWidth - margin.right}
-							y1={yScale(tick)}
-							y2={yScale(tick)}
-						/>
-
-						<text
-							fill="#6b7280"
-							text-anchor="middle"
-							font-size="11px"
-							dominant-baseline="middle"
-							x={-10}
-							y={yScale(tick)}
-							font-weight="600"
-						>
-							{tick}%
-						</text>
-					{/each}
-				</g>
-
-				{#each groupedData as [islandName, islandData], i}
-					<g class="island-group" data-island={islandName}>
-						<!-- Line path with staggered animation -->
-						<path
-							class="line-path"
-							d={generateLinePath(islandData, 'OBS_VALUE')}
-							fill="none"
-							stroke={optionsState.colorsIslands[islandName]}
-							stroke-width="3"
-							style="--island-index: {i};"
-						/>
-
-						<!-- Data points with staggered animations -->
-						{#each islandData as dataPoint, pointIndex}
-							<circle
-								class="data-point cursor-pointer"
-								cx={xScale(dataPoint['TIME_PERIOD'])}
-								cy={yScale(dataPoint['OBS_VALUE'])}
-								r="4"
-								fill={optionsState.colorsIslands[islandName]}
-								stroke="white"
-								stroke-width="2"
-								style="--island-index: {i}; --point-index: {pointIndex};"
-								onmouseenter={(e) => {
-									selectedPoint = {
-										x: e.clientX,
-										y: e.clientY,
-										data: dataPoint
-									};
-								}}
-								onmouseout={() => {
-									selectedPoint = {};
-								}}
-							/>
-						{/each}
-					</g>
+		<svg width={computedGraphWidth + margin.left} height={graphHeight} class="overflow-visible">
+			<!-- X Axis -->
+			<g transform="translate(0,{graphHeight - margin.bottom})">
+				{#each xScale
+					.ticks()
+					.slice(1)
+					.filter((tick) => Number.isInteger(tick)) as tick}
+					<line
+						stroke="#142e63"
+						stroke-width="0.8"
+						opacity="0.2"
+						stroke-dasharray="4,6"
+						x1={xScale(tick)}
+						x2={xScale(tick)}
+						y2={-graphHeight + margin.top + margin.bottom}
+						y1={0}
+					/>
 				{/each}
-			</svg>
-		{/if}
+				{#each xScale.ticks(5).filter((tick) => Number.isInteger(tick)) as tick}
+					<text
+						font-size="11px"
+						fill="#6b7280"
+						text-anchor="middle"
+						x={xScale(tick) + 10}
+						y={28}
+						transform="rotate(45, {xScale(tick)}, 20)"
+					>
+						{tick}
+					</text>
+				{/each}
+			</g>
+
+			<!-- Y Axis -->
+			<g transform="translate({margin.left}, 0)">
+				{#each yScale.ticks(5) as tick}
+					<line
+						stroke="#142e63"
+						stroke-width="0.8"
+						opacity="0.2"
+						stroke-dasharray="4,6"
+						x1={margin.left}
+						x2={computedGraphWidth - margin.right}
+						y1={yScale(tick)}
+						y2={yScale(tick)}
+					/>
+
+					<text
+						fill="#6b7280"
+						text-anchor="middle"
+						font-size="11px"
+						dominant-baseline="middle"
+						x={-10}
+						y={yScale(tick)}
+						font-weight="600"
+					>
+						{tick}%
+					</text>
+				{/each}
+			</g>
+
+			{#each groupedData as [islandName, islandData], i}
+				<g class="island-group" data-island={islandName}>
+					<!-- Line path with staggered animation -->
+					<path
+						class="line-path"
+						d={generateLinePath(islandData, 'OBS_VALUE')}
+						fill="none"
+						stroke={optionsState.colorsIslands[islandName]}
+						stroke-width="3"
+						style="--island-index: {i};"
+					/>
+
+					<!-- Data points with staggered animations -->
+					{#each islandData as dataPoint, pointIndex}
+						<circle
+							class="data-point cursor-pointer"
+							cx={xScale(dataPoint['TIME_PERIOD'])}
+							cy={yScale(dataPoint['OBS_VALUE'])}
+							r="4"
+							fill={optionsState.colorsIslands[islandName]}
+							stroke="white"
+							stroke-width="2"
+							style="--island-index: {i}; --point-index: {pointIndex};"
+							onmouseenter={(e) => {
+								selectedPoint = {
+									x: e.clientX,
+									y: e.clientY,
+									data: dataPoint
+								};
+							}}
+							onmouseout={() => {
+								selectedPoint = {};
+							}}
+						/>
+					{/each}
+				</g>
+			{/each}
+		</svg>
 	</div>
 </div>
 

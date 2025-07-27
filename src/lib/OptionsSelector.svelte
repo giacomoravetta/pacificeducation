@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { appData } from '../../../../state.svelte';
+	import { appData } from '../state.svelte';
 
-	import { translate } from '../../../../translate_util';
+	import { translate } from '../translate_util';
 
 	interface Props {
 		optionsState: {
@@ -15,10 +15,17 @@
 		onEducationToggle?: (education: string) => void;
 		onSexToggle?: (sex: string) => void;
 		onIslandToggle?: (island: string) => void;
+		compare?: boolean;
 	}
 
-	let { optionsState, onSkillToggle, onEducationToggle, onSexToggle, onIslandToggle }: Props =
-		$props();
+	let {
+		optionsState,
+		onSkillToggle,
+		onEducationToggle,
+		onSexToggle,
+		onIslandToggle,
+		compare
+	}: Props = $props();
 
 	// Derive static lists from data using Svelte 5 runes
 	const skills = $derived([
@@ -177,7 +184,6 @@
 	};
 </script>
 
-<!-- Using Tailwind 4 classes and modern CSS -->
 <div
 	class="ocean-background
 	relative flex w-full flex-col
@@ -203,21 +209,38 @@
 				class="
 				flex h-8 w-8
 				items-center justify-center rounded-lg
-				bg-white/20 text-2xl
+				bg-white/20 text-[min(3dvw,17px)]
 				text-white backdrop-blur-sm
 			"
 			>
 				🧮
 			</div>
-			<h3 class="text-base font-semibold tracking-wide text-white">Skills</h3>
+			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Skills</h3>
 		</div>
 		<div
 			class="
-			scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50
-			flex cursor-grab
-			gap-3 overflow-x-auto
-			scroll-smooth pb-2 text-white active:cursor-grabbing
+			flex
+			cursor-grab
+			gap-3
+			overflow-x-auto
+			scroll-smooth
+			pb-2
+			text-white
+			active:cursor-grabbing
+			[&::-webkit-scrollbar]:h-2
+			[&::-webkit-scrollbar-thumb]:rounded-full
+			[&::-webkit-scrollbar-thumb]:border-2
+			[&::-webkit-scrollbar-thumb]:border-white/20
+			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
+			[&::-webkit-scrollbar-thumb]:from-blue-400/60
+			[&::-webkit-scrollbar-thumb]:to-cyan-300/60
+			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
+			[&::-webkit-scrollbar-thumb]:transition-all
+			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-blue-300/80
+			hover:[&::-webkit-scrollbar-thumb]:to-cyan-200/80 hover:[&::-webkit-scrollbar-thumb]:shadow-lg
+			hover:[&::-webkit-scrollbar-thumb]:shadow-blue-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
+			style="scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.6) rgba(255, 255, 255, 0.1);"
 			dragScroll
 		>
 			{#each skills as skill (skill)}
@@ -227,11 +250,11 @@
 					disabled={!isAvailable}
 					onclick={handleFilterClick}
 					class="
-						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-						transform-gpu items-center gap-2
-						rounded-2xl border border-white/20
-						bg-white/15 px-5
-						py-3 text-sm font-medium whitespace-nowrap backdrop-blur-sm
+						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0 transform-gpu
+						items-center gap-2 rounded-2xl
+						border border-white/20 bg-white/15
+						px-5 py-3
+						text-[min(3dvw,17px)] font-medium whitespace-nowrap backdrop-blur-sm
 						transition-all
 						duration-300
 
@@ -261,22 +284,39 @@
 				class="
 				flex h-8 w-8
 				items-center justify-center rounded-lg
-				bg-white/20 text-2xl
+				bg-white/20 text-[min(3dvw,17px)]
 				text-white
 				backdrop-blur-sm
 			"
 			>
 				📚
 			</div>
-			<h3 class="text-base font-semibold tracking-wide text-white">Education</h3>
+			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Education</h3>
 		</div>
 		<div
 			class="
-			scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50
-			flex cursor-grab
+			flex
+			cursor-grab
 			gap-3
-			overflow-x-auto scroll-smooth pb-2 text-white active:cursor-grabbing
+			overflow-x-auto
+			scroll-smooth
+			pb-2
+			text-white
+			active:cursor-grabbing
+			[&::-webkit-scrollbar]:h-2
+			[&::-webkit-scrollbar-thumb]:rounded-full
+			[&::-webkit-scrollbar-thumb]:border-2
+			[&::-webkit-scrollbar-thumb]:border-white/20
+			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
+			[&::-webkit-scrollbar-thumb]:from-emerald-400/60
+			[&::-webkit-scrollbar-thumb]:to-teal-300/60
+			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
+			[&::-webkit-scrollbar-thumb]:transition-all
+			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-emerald-300/80
+			hover:[&::-webkit-scrollbar-thumb]:to-teal-200/80
+			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-emerald-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
+			style="scrollbar-width: thin; scrollbar-color: rgba(52, 211, 153, 0.6) rgba(255, 255, 255, 0.1);"
 			dragScroll
 		>
 			{#each educationTypes as education (education)}
@@ -290,8 +330,9 @@
 						transform-gpu items-center gap-2
 						rounded-2xl border border-white/20
 						bg-white/15 px-5
-						py-3 text-sm font-medium whitespace-nowrap backdrop-blur-sm
-						transition-all
+						py-3 text-[min(3dvw,17px)] font-medium
+						whitespace-nowrap
+						backdrop-blur-sm transition-all
 						duration-300
 
 						{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
@@ -321,21 +362,39 @@
 				class="
 				flex h-8 w-8
 				items-center justify-center rounded-lg
-				bg-white/20 text-2xl
+				bg-white/20 text-[min(3dvw,17px)]
 				text-white backdrop-blur-sm
 			"
 			>
 				🧑
 			</div>
-			<h3 class="text-base font-semibold tracking-wide text-white">Gender</h3>
+			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Gender</h3>
 		</div>
 		<div
 			class="
-			scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50
-			flex cursor-grab
+			flex
+			cursor-grab
 			gap-3
-			overflow-x-auto scroll-smooth pb-2 text-white active:cursor-grabbing
+			overflow-x-auto
+			scroll-smooth
+			pb-2
+			text-xs
+			text-white active:cursor-grabbing
+
+			[&::-webkit-scrollbar]:h-2
+			[&::-webkit-scrollbar-thumb]:rounded-full
+			[&::-webkit-scrollbar-thumb]:border-2
+			[&::-webkit-scrollbar-thumb]:border-white/20
+			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
+			[&::-webkit-scrollbar-thumb]:from-purple-400/60
+			[&::-webkit-scrollbar-thumb]:to-pink-300/60
+			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
+			[&::-webkit-scrollbar-thumb]:transition-all
+			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-purple-300/80
+			hover:[&::-webkit-scrollbar-thumb]:to-pink-200/80
+			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-purple-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
+			style="scrollbar-width: thin; scrollbar-color: rgba(196, 181, 253, 0.6) rgba(255, 255, 255, 0.1);"
 			dragScroll
 		>
 			{#each sexes as sex (sex)}
@@ -349,9 +408,10 @@
 						transform-gpu items-center gap-2
 						rounded-2xl border border-white/20
 						bg-white/15 px-5
-						py-3 text-sm font-medium whitespace-nowrap backdrop-blur-sm
-						transition-all
-						duration-300
+						py-3 text-[min(3dvw,17px)] font-medium
+						whitespace-nowrap
+						backdrop-blur-sm
+						transition-all duration-300
 
 						{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
 						{!isAvailable
@@ -378,22 +438,41 @@
 				class="
 				flex h-8 w-8
 				items-center justify-center rounded-lg
-				bg-white/20 text-2xl
+				bg-white/20 text-[min(3dvw,17px)]
 				text-white backdrop-blur-sm
 			"
 			>
 				🏝️
 			</div>
-			<h3 class="text-base font-semibold tracking-wide text-white">Islands</h3>
+			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Islands</h3>
 		</div>
 		<div
 			class="
-			scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-white/30 hover:scrollbar-thumb-white/50
-			islands-section flex
+			islands-section
+			flex
 			cursor-grab
-			gap-3 overflow-x-auto scroll-smooth pb-2
+			gap-3
+			overflow-x-auto
+			scroll-smooth
+			pb-2
 			active:cursor-grabbing
+			[&::-webkit-scrollbar]:h-2
+			[&::-webkit-scrollbar-thumb]:rounded-full
+			[&::-webkit-scrollbar-thumb]:border-2
+			[&::-webkit-scrollbar-thumb]:border-white/20
+			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
+			[&::-webkit-scrollbar-thumb]:from-orange-400/60
+			[&::-webkit-scrollbar-thumb]:via-amber-300/60
+			[&::-webkit-scrollbar-thumb]:to-yellow-300/60
+			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
+			[&::-webkit-scrollbar-thumb]:transition-all
+			[&::-webkit-scrollbar-thumb]:duration-300
+			hover:[&::-webkit-scrollbar-thumb]:from-orange-300/80 hover:[&::-webkit-scrollbar-thumb]:via-amber-200/80
+			hover:[&::-webkit-scrollbar-thumb]:to-yellow-200/80
+			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-amber-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10
+			[&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
+			style="scrollbar-width: thin; scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);"
 			dragScroll
 		>
 			{#each islands as island (island)}
@@ -401,18 +480,18 @@
 				{@const isEnabled = areIslandsEnabled()}
 				{@const islandColor = optionsState.colorsIslands[island] || '#3b82f6'}
 				<button
-					disabled={!isEnabled}
+					disabled={!isEnabled ||
+						(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
 					onclick={handleFilterClick}
 					class="
-						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-						transform-gpu items-center gap-2
-						rounded-2xl px-5
-						py-3 text-sm font-medium whitespace-nowrap text-white backdrop-blur-sm
+					cubic-bezier(0.4, 0,
+						0.2, 1) flex flex-shrink-0 transform-gpu items-center
+						gap-2 rounded-2xl px-5
+						py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap text-white backdrop-blur-sm
 						transition-all
 						duration-300
-
 						{isSelected ? `border shadow-lg` : 'border border-white/20 bg-white/15'}
-						{!isEnabled
+						{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
 						? 'pointer-events-none cursor-not-allowed opacity-30'
 						: 'hover:bg-white/25 hover:shadow-lg '}
 					"
@@ -428,29 +507,6 @@
 </div>
 
 <style>
-	/* Tailwind 4 uses modern CSS features, but we can still add custom styles for specific needs */
-
-	/* Custom scrollbar for better cross-browser support if needed */
-	@supports not (scrollbar-width: thin) {
-		.scroll-container::-webkit-scrollbar {
-			height: 4px;
-		}
-
-		.scroll-container::-webkit-scrollbar-track {
-			background: rgba(255, 255, 255, 0.1);
-			border-radius: 2px;
-		}
-
-		.scroll-container::-webkit-scrollbar-thumb {
-			background: rgba(255, 255, 255, 0.3);
-			border-radius: 2px;
-		}
-
-		.scroll-container::-webkit-scrollbar-thumb:hover {
-			background: rgba(255, 255, 255, 0.5);
-		}
-	}
-
 	/* Ensure grab cursor works consistently across browsers */
 	.cursor-grabbing {
 		cursor: grabbing !important;

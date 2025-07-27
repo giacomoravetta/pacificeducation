@@ -1,7 +1,8 @@
 <script lang="ts">
 	import LineChartEducation from './DataVizComponents/Education/LineChartEducation.svelte';
-	import OptionsSelector from './DataVizComponents/Education/OptionsSelector.svelte';
+	import OptionsSelector from '$lib/OptionsSelector.svelte';
 	import { appData } from '../../state.svelte';
+	import { AccordionItem, Accordion } from 'flowbite-svelte';
 
 	let optionsState = $state({
 		selectedSexes: [],
@@ -130,11 +131,22 @@
 
 <section class="flex w-full flex-col items-center justify-center gap-5">
 	<LineChartEducation {optionsState} />
-	<OptionsSelector
-		{optionsState}
-		onSkillToggle={handleSkillToggle}
-		onEducationToggle={handleEducationToggle}
-		onSexToggle={handleSexToggle}
-		onIslandToggle={handleIslandToggle}
-	/>
+
+	<Accordion
+		class="ocean-background rounded-2xl "
+		inactiveClass="ocean-background rounded-2xl hover:bg-white/20 "
+		activeClass="ocean-background "
+	>
+		<AccordionItem>
+			{#snippet header()}<h1 class=" text-white">Options</h1>
+			{/snippet}
+			<OptionsSelector
+				{optionsState}
+				onSkillToggle={handleSkillToggle}
+				onEducationToggle={handleEducationToggle}
+				onSexToggle={handleSexToggle}
+				onIslandToggle={handleIslandToggle}
+			/>
+		</AccordionItem>
+	</Accordion>
 </section>

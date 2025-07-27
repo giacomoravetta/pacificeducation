@@ -37,7 +37,7 @@
 	});
 
 	const margin = { top: 40, right: 40, left: 40, bottom: 50 };
-	let computedGraphWidth = $derived(graphWidth + margin.left);
+	let computedGraphWidth = $derived(graphWidth - margin.right);
 	const graphHeight = 400;
 
 	// Combine all data to get proper scale domains
@@ -90,15 +90,12 @@
 		};
 	}
 
-	// Svelte 5 action for animating line paths
 	function animateLine(node, { delay = 0 } = {}) {
 		const pathLength = node.getTotalLength();
 
-		// Set up the starting positions for line
 		node.style.strokeDasharray = pathLength.toString();
 		node.style.strokeDashoffset = pathLength.toString();
 
-		// Animate after delay
 		const timeout = setTimeout(() => {
 			node.style.transition = 'stroke-dashoffset 2s ease-in-out';
 			node.style.strokeDashoffset = '0';
@@ -164,21 +161,27 @@
 		</div>
 	{/if}
 
-	<svg width={computedGraphWidth + margin.right} height={graphHeight}>
+	<svg width={computedGraphWidth + margin.left} height={graphHeight}>
 		<!-- X Axis -->
 		<g transform="translate(0,{graphHeight - margin.bottom})">
-			{#each xScale.ticks().slice(1) as tick}
+			{#each xScale
+				.ticks()
+				.slice(1)
+				.filter((tick) => Number.isInteger(tick)) as tick}
+				as tick}
 				<line
-					stroke="#e5e7eb"
-					opacity="0.8"
-					stroke-dasharray="2,2"
+					stroke="#142e63"
+					stroke-width="0.8"
+					opacity="0.2"
+					stroke-dasharray="4,6"
 					x1={xScale(tick)}
 					x2={xScale(tick)}
 					y2={-graphHeight + margin.top + margin.bottom}
 					y1={0}
 				/>
 			{/each}
-			{#each xScale.ticks(5) as tick}
+			{#each xScale.ticks(5).filter((tick) => Number.isInteger(tick)) as tick}
+				as tick}
 				<text
 					font-size="11px"
 					fill="#6b7280"
@@ -196,8 +199,10 @@
 		<g transform="translate({margin.left}, 0)">
 			{#each yScale.ticks(5) as tick}
 				<line
-					stroke="#e5e7eb"
-					opacity="0.8"
+					stroke="#142e63"
+					stroke-width="0.8"
+					stroke-opacity="0.2"
+					stroke-dasharray="4,6"
 					x1={margin.left}
 					x2={computedGraphWidth - margin.right}
 					y1={yScale(tick)}
