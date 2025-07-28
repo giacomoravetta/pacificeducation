@@ -1,6 +1,6 @@
 import { csv, autoType } from 'd3';
 
-const dataPathFactors = '/data/factors.csv';
+const dataOrganisedLearing = '/data/organised_learning.csv';
 
 const islandsIndicators = {
 	PF: 'French Polynesia',
@@ -27,7 +27,7 @@ const loadData = async () => {
 			'https://raw.githubusercontent.com/giacomoravetta/pacificeducation/refs/heads/master/static/data/combined_data_islands_skills.csv',
 			autoType
 		);
-		const csvDataFactors = await csv(dataPathFactors, autoType);
+		const csvDataFactors = await csv(dataOrganisedLearing, autoType);
 
 		const updatedCsvDataSkills = csvDataSkills.map((d) => {
 			d.GEO_PICT = islandsIndicators[d.GEO_PICT];

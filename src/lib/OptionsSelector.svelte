@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { appData } from '../state.svelte';
-
 	import { translate } from '../translate_util';
+	import { onMount } from 'svelte';
+
+	import { gsap } from 'gsap';
+	import { Draggable } from 'gsap/Draggable';
+	import { InertiaPlugin } from 'gsap/InertiaPlugin';
+
+	gsap.registerPlugin(Draggable, InertiaPlugin);
 
 	interface Props {
 		optionsState: {
@@ -55,6 +61,9 @@
 	// Derive available islands from filtered data
 	const islands = $derived([...new Set(filteredData.map((d) => d['GEO_PICT']))]);
 
+	// Store GSAP draggable instances for cleanup
+	let draggableInstances: any[] = [];
+
 	// Utility functions
 	const determineOptionType = (selectedOption: string): string | undefined => {
 		if (islands.includes(selectedOption)) return 'island';
@@ -86,69 +95,116 @@
 		}
 	};
 
-	// Drag scrolling attachment (Svelte 5 modern approach)
-	function dragScroll(node: HTMLElement) {
-		let isDown = false;
-		let startX: number;
-		let scrollLeft: number;
+	// GSAP drag scrolling implementation - using container approach
+	function gsapDragScroll(node: HTMLElement) {
 		let isDragging = false;
+		let startTime = 0;
 
-		const handleMouseDown = (e: MouseEvent) => {
-			isDown = true;
-			isDragging = false;
-			node.classList.add('cursor-grabbing');
-			startX = e.pageX - node.offsetLeft;
-			scrollLeft = node.scrollLeft;
-			e.preventDefault();
+		// Find the scrollable content wrapper
+		const contentWrapper = node.querySelector('.scroll-content') as HTMLElement;
+		if (!contentWrapper) return { destroy: () => {} };
+
+		// Calculate bounds for dragging
+		const getBounds = () => {
+			const containerWidth = node.offsetWidth;
+			const contentWidth = contentWrapper.scrollWidth;
+			const maxScroll = Math.max(0, contentWidth - containerWidth);
+			return {
+				minX: -maxScroll,
+				maxX: 0
+			};
 		};
 
-		const handleMouseLeave = () => {
-			isDown = false;
-			node.classList.remove('cursor-grabbing');
-		};
+		const draggableInstance = Draggable.create(contentWrapper, {
+			type: 'x',
+			inertia: true,
+			edgeResistance: 0.65,
+			bounds: getBounds,
+			cursor: 'grab',
+			minimumMovement: 3,
+			allowContextMenu: true,
+			onPress() {
+				gsap.killTweensOf(contentWrapper);
+				isDragging = false;
+				startTime = Date.now();
+			},
+			onDragStart() {
+				isDragging = true;
+				node.classList.add('cursor-grabbing');
+				contentWrapper.style.cursor = 'grabbing';
+			},
+			onDragEnd() {
+				node.classList.remove('cursor-grabbing');
+				contentWrapper.style.cursor = 'grab';
 
-		const handleMouseUp = () => {
-			isDown = false;
-			node.classList.remove('cursor-grabbing');
-			if (isDragging) {
-				setTimeout(() => {
-					isDragging = false;
-				}, 10);
+				// Prevent clicks for a short time after drag
+				setTimeout(
+					() => {
+						isDragging = false;
+					},
+					Math.max(50, Date.now() - startTime > 200 ? 100 : 50)
+				);
+			},
+			onDrag() {
+				// Update bounds dynamically in case content changes
+				this.applyBounds(getBounds());
+
+				// Mark as dragging for click prevention
+				if (node.classList.contains('islands-section')) {
+					node.dataset.dragging = 'true';
+				}
 			}
-		};
+		})[0];
 
-		const handleMouseMove = (e: MouseEvent) => {
-			if (!isDown) return;
-			e.preventDefault();
-			isDragging = true;
-			const x = e.pageX - node.offsetLeft;
-			const walk = (x - startX) * 2;
-			node.scrollLeft = scrollLeft - walk;
-		};
-
+		// Handle click prevention during drag
 		const handleClick = (e: MouseEvent) => {
-			if (isDragging && node.classList.contains('islands-section')) {
+			if (isDragging || node.dataset.dragging === 'true') {
 				e.preventDefault();
 				e.stopPropagation();
+				e.stopImmediatePropagation();
+				// Clean up dragging flag
+				setTimeout(() => {
+					delete node.dataset.dragging;
+				}, 10);
+				return false;
 			}
 		};
 
-		node.addEventListener('mousedown', handleMouseDown);
-		node.addEventListener('mouseleave', handleMouseLeave);
-		node.addEventListener('mouseup', handleMouseUp);
-		node.addEventListener('mousemove', handleMouseMove);
+		// Add click handler with capture
 		node.addEventListener('click', handleClick, true);
+		node.addEventListener('mousedown', handleClick, true);
+
+		// Store instance for cleanup
+		draggableInstances.push(draggableInstance);
 
 		return {
 			destroy() {
-				node.removeEventListener('mousedown', handleMouseDown);
-				node.removeEventListener('mouseleave', handleMouseLeave);
-				node.removeEventListener('mouseup', handleMouseUp);
-				node.removeEventListener('mousemove', handleMouseMove);
+				if (draggableInstance) {
+					draggableInstance.kill();
+					const index = draggableInstances.indexOf(draggableInstance);
+					if (index > -1) {
+						draggableInstances.splice(index, 1);
+					}
+				}
+
+				// Remove event listeners
 				node.removeEventListener('click', handleClick, true);
+				node.removeEventListener('mousedown', handleClick, true);
 			}
 		};
 	}
+
+	// Cleanup GSAP instances on component destroy
+	onMount(() => {
+		return () => {
+			draggableInstances.forEach((instance) => {
+				if (instance && instance.kill) {
+					instance.kill();
+				}
+			});
+			draggableInstances = [];
+		};
+	});
 
 	// Helper functions for determining chip states
 	const isSkillAvailable = (skill: string) => {
@@ -219,13 +275,8 @@
 		</div>
 		<div
 			class="
-			flex
 			cursor-grab
-			gap-3
-			overflow-x-auto
-			scroll-smooth
-			pb-2
-			text-white
+			overflow-hidden
 			active:cursor-grabbing
 			[&::-webkit-scrollbar]:h-2
 			[&::-webkit-scrollbar-thumb]:rounded-full
@@ -241,32 +292,34 @@
 			hover:[&::-webkit-scrollbar-thumb]:shadow-blue-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
 			style="scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.6) rgba(255, 255, 255, 0.1);"
-			dragScroll
+			use:gsapDragScroll
 		>
-			{#each skills as skill (skill)}
-				{@const isSelected = optionsState.selectedSkills.includes(skill)}
-				{@const isAvailable = isSkillAvailable(skill)}
-				<button
-					disabled={!isAvailable}
-					onclick={handleFilterClick}
-					class="
-						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0 transform-gpu
-						items-center gap-2 rounded-2xl
-						border border-white/20 bg-white/15
-						px-5 py-3
-						text-[min(3dvw,17px)] font-medium whitespace-nowrap backdrop-blur-sm
-						transition-all
-						duration-300
+			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
+				{#each skills as skill (skill)}
+					{@const isSelected = optionsState.selectedSkills.includes(skill)}
+					{@const isAvailable = isSkillAvailable(skill)}
+					<button
+						disabled={!isAvailable}
+						onclick={handleFilterClick}
+						class="
+							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0 transform-gpu
+							items-center gap-2 rounded-2xl
+							border border-white/20 bg-white/15
+							px-5 py-3
+							text-[min(3dvw,17px)] font-medium whitespace-nowrap backdrop-blur-sm
+							transition-all
+							duration-300
 
-						{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
-						{!isAvailable
-						? 'pointer-events-none cursor-not-allowed opacity-30'
-						: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
-					"
-				>
-					<span>{translate(skill)}</span>
-				</button>
-			{/each}
+							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{!isAvailable
+							? 'pointer-events-none cursor-not-allowed opacity-30'
+							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
+						"
+					>
+						<span>{translate(skill)}</span>
+					</button>
+				{/each}
+			</div>
 		</div>
 	</div>
 
@@ -295,13 +348,8 @@
 		</div>
 		<div
 			class="
-			flex
 			cursor-grab
-			gap-3
-			overflow-x-auto
-			scroll-smooth
-			pb-2
-			text-white
+			overflow-hidden
 			active:cursor-grabbing
 			[&::-webkit-scrollbar]:h-2
 			[&::-webkit-scrollbar-thumb]:rounded-full
@@ -317,34 +365,36 @@
 			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-emerald-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
 			style="scrollbar-width: thin; scrollbar-color: rgba(52, 211, 153, 0.6) rgba(255, 255, 255, 0.1);"
-			dragScroll
+			use:gsapDragScroll
 		>
-			{#each educationTypes as education (education)}
-				{@const isSelected = optionsState.selectedEducation.includes(education)}
-				{@const isAvailable = isEducationAvailable(education)}
-				<button
-					disabled={!isAvailable}
-					onclick={handleFilterClick}
-					class="
-						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-						transform-gpu items-center gap-2
-						rounded-2xl border border-white/20
-						bg-white/15 px-5
-						py-3 text-[min(3dvw,17px)] font-medium
-						whitespace-nowrap
-						backdrop-blur-sm transition-all
-						duration-300
+			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
+				{#each educationTypes as education (education)}
+					{@const isSelected = optionsState.selectedEducation.includes(education)}
+					{@const isAvailable = isEducationAvailable(education)}
+					<button
+						disabled={!isAvailable}
+						onclick={handleFilterClick}
+						class="
+							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
+							transform-gpu items-center gap-2
+							rounded-2xl border border-white/20
+							bg-white/15 px-5
+							py-3 text-[min(3dvw,17px)] font-medium
+							whitespace-nowrap
+							backdrop-blur-sm transition-all
+							duration-300
 
-						{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
-						{!isAvailable
-						? 'pointer-events-none cursor-not-allowed opacity-30'
-						: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
+							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{!isAvailable
+							? 'pointer-events-none cursor-not-allowed opacity-30'
+							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
 
-					"
-				>
-					<span>{translate(education)}</span>
-				</button>
-			{/each}
+						"
+					>
+						<span>{translate(education)}</span>
+					</button>
+				{/each}
+			</div>
 		</div>
 	</div>
 
@@ -372,15 +422,9 @@
 		</div>
 		<div
 			class="
-			flex
 			cursor-grab
-			gap-3
-			overflow-x-auto
-			scroll-smooth
-			pb-2
-			text-xs
-			text-white active:cursor-grabbing
-
+			overflow-hidden
+			active:cursor-grabbing
 			[&::-webkit-scrollbar]:h-2
 			[&::-webkit-scrollbar-thumb]:rounded-full
 			[&::-webkit-scrollbar-thumb]:border-2
@@ -395,33 +439,35 @@
 			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-purple-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
 			style="scrollbar-width: thin; scrollbar-color: rgba(196, 181, 253, 0.6) rgba(255, 255, 255, 0.1);"
-			dragScroll
+			use:gsapDragScroll
 		>
-			{#each sexes as sex (sex)}
-				{@const isSelected = optionsState.selectedSexes.includes(sex)}
-				{@const isAvailable = isSexAvailable(sex)}
-				<button
-					disabled={!isAvailable}
-					onclick={handleFilterClick}
-					class="
-						cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-						transform-gpu items-center gap-2
-						rounded-2xl border border-white/20
-						bg-white/15 px-5
-						py-3 text-[min(3dvw,17px)] font-medium
-						whitespace-nowrap
-						backdrop-blur-sm
-						transition-all duration-300
+			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
+				{#each sexes as sex (sex)}
+					{@const isSelected = optionsState.selectedSexes.includes(sex)}
+					{@const isAvailable = isSexAvailable(sex)}
+					<button
+						disabled={!isAvailable}
+						onclick={handleFilterClick}
+						class="
+							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
+							transform-gpu items-center gap-2
+							rounded-2xl border border-white/20
+							bg-white/15 px-5
+							py-3 text-[min(3dvw,17px)] font-medium
+							whitespace-nowrap
+							backdrop-blur-sm
+							transition-all duration-300
 
-						{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
-						{!isAvailable
-						? 'pointer-events-none cursor-not-allowed opacity-30'
-						: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
-					"
-				>
-					<span>{translate(sex)}</span>
-				</button>
-			{/each}
+							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{!isAvailable
+							? 'pointer-events-none cursor-not-allowed opacity-30'
+							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
+						"
+					>
+						<span>{translate(sex)}</span>
+					</button>
+				{/each}
+			</div>
 		</div>
 	</div>
 
@@ -449,12 +495,8 @@
 		<div
 			class="
 			islands-section
-			flex
 			cursor-grab
-			gap-3
-			overflow-x-auto
-			scroll-smooth
-			pb-2
+			overflow-hidden
 			active:cursor-grabbing
 			[&::-webkit-scrollbar]:h-2
 			[&::-webkit-scrollbar-thumb]:rounded-full
@@ -473,35 +515,37 @@
 			[&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
 			style="scrollbar-width: thin; scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);"
-			dragScroll
+			use:gsapDragScroll
 		>
-			{#each islands as island (island)}
-				{@const isSelected = optionsState.selectedIslands.includes(island)}
-				{@const isEnabled = areIslandsEnabled()}
-				{@const islandColor = optionsState.colorsIslands[island] || '#3b82f6'}
-				<button
-					disabled={!isEnabled ||
-						(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
-					onclick={handleFilterClick}
-					class="
-					cubic-bezier(0.4, 0,
-						0.2, 1) flex flex-shrink-0 transform-gpu items-center
-						gap-2 rounded-2xl px-5
-						py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap text-white backdrop-blur-sm
-						transition-all
-						duration-300
-						{isSelected ? `border shadow-lg` : 'border border-white/20 bg-white/15'}
-						{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
-						? 'pointer-events-none cursor-not-allowed opacity-30'
-						: 'hover:bg-white/25 hover:shadow-lg '}
-					"
-					style="
-						{isSelected ? `background: ${islandColor}; border-color: ${islandColor};` : ''}
-					"
-				>
-					<span>{island}</span>
-				</button>
-			{/each}
+			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
+				{#each islands as island (island)}
+					{@const isSelected = optionsState.selectedIslands.includes(island)}
+					{@const isEnabled = areIslandsEnabled()}
+					{@const islandColor = optionsState.colorsIslands[island] || '#3b82f6'}
+					<button
+						disabled={!isEnabled ||
+							(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
+						onclick={handleFilterClick}
+						class="
+						cubic-bezier(0.4, 0,
+							0.2, 1) flex flex-shrink-0 transform-gpu items-center
+							gap-2 rounded-2xl px-5
+							py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap text-white backdrop-blur-sm
+							transition-all
+							duration-300
+							{isSelected ? `border shadow-lg` : 'border border-white/20 bg-white/15'}
+							{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
+							? 'pointer-events-none cursor-not-allowed opacity-30'
+							: 'hover:bg-white/25 hover:shadow-lg '}
+						"
+						style="
+							{isSelected ? `background: ${islandColor}; border-color: ${islandColor};` : ''}
+						"
+					>
+						<span>{island}</span>
+					</button>
+				{/each}
+			</div>
 		</div>
 	</div>
 </div>

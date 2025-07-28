@@ -2,7 +2,14 @@
 	import LineChartEducation from './DataVizComponents/Education/LineChartEducation.svelte';
 	import OptionsSelector from '$lib/OptionsSelector.svelte';
 	import { appData } from '../../state.svelte';
-	import { AccordionItem, Accordion } from 'flowbite-svelte';
+
+	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
+	import { InfoCircleSolid, ArrowRightOutline } from 'flowbite-svelte-icons';
+	import { sineIn } from 'svelte/easing';
+
+	let innerWidth = $state();
+
+	let hidden = $state(true);
 
 	let optionsState = $state({
 		selectedSexes: [],
@@ -129,24 +136,36 @@
 	};
 </script>
 
+<svelte:window bind:innerWidth />
+
 <section class="flex w-full flex-col items-center justify-center gap-5">
 	<LineChartEducation {optionsState} />
 
-	<Accordion
-		class="ocean-background rounded-2xl "
-		inactiveClass="ocean-background rounded-2xl hover:bg-white/20 "
-		activeClass="ocean-background "
+	<div class="text-center">
+		<Button class="ocean-background rounded-2xl " onclick={() => (hidden = false)}
+			>Show Options</Button
+		>
+	</div>
+	<Drawer
+		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		placement={innerWidth > 1279 ? 'left' : 'top'}
+		bind:hidden
 	>
-		<AccordionItem>
-			{#snippet header()}<h1 class=" text-white">Options</h1>
-			{/snippet}
-			<OptionsSelector
-				{optionsState}
-				onSkillToggle={handleSkillToggle}
-				onEducationToggle={handleEducationToggle}
-				onSexToggle={handleSexToggle}
-				onIslandToggle={handleIslandToggle}
-			/>
-		</AccordionItem>
-	</Accordion>
+		<div class="flex items-center justify-between">
+			<h5
+				id="drawer-label"
+				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
+			>
+				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options
+			</h5>
+			<CloseButton onclick={() => (hidden = true)} class="mb-4 dark:text-white" />
+		</div>
+		<OptionsSelector
+			{optionsState}
+			onSkillToggle={handleSkillToggle}
+			onEducationToggle={handleEducationToggle}
+			onSexToggle={handleSexToggle}
+			onIslandToggle={handleIslandToggle}
+		/>
+	</Drawer>
 </section>

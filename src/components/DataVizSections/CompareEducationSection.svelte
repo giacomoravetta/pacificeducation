@@ -2,8 +2,13 @@
 	import { appData } from '../../state.svelte';
 	import OptionsSelector from '$lib/OptionsSelector.svelte';
 	import AreaChartEducationCompare from './DataVizComponents/CompareEducation/AreaChartEducationCompare.svelte';
+	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
+	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 
-	import { AccordionItem, Accordion } from 'flowbite-svelte';
+	let hiddenFirst = $state(true);
+	let hiddenSecond = $state(true);
+
+	let innerWidth: number = $state();
 
 	let firstOptionsState = $state({
 		selectedSexes: [],
@@ -183,46 +188,71 @@
 	};
 </script>
 
+<svelte:window bind:innerWidth />
 <section class="flex w-full flex-col items-center justify-center gap-5">
 	<AreaChartEducationCompare {firstOptionsState} {secondOptionsState} />
 
-	<div class="flex w-full flex-col gap-2 md:flex-row">
-		<!-- First Options Selector -->
-
-		<Accordion
-			class="ocean-background"
-			inactiveClass="ocean-background  hover:bg-white/20 "
-			activeClass="ocean-background "
-		>
-			<AccordionItem class=" rounded-2xl">
-				{#snippet header()}
-					<h3 class=" mb-4 text-lg font-semibold text-white">Dataset 1 Options</h3>{/snippet}
-				<div class="w-full">
-					<OptionsSelector
-						optionsState={firstOptionsState}
-						onSkillToggle={handleFirstSkillToggle}
-						onEducationToggle={handleFirstEducationToggle}
-						onSexToggle={handleFirstSexToggle}
-						onIslandToggle={handleFirstIslandToggle}
-						compare={true}
-					/>
-				</div>
-			</AccordionItem>
-			<AccordionItem class="ocean-background rounded-2xl">
-				{#snippet header()}<h3 class="mb-4 text-lg font-semibold text-white">Dataset 2 Options</h3>
-				{/snippet}
-				<!-- Second Options Selector -->
-				<div class="w-full">
-					<OptionsSelector
-						optionsState={secondOptionsState}
-						onSkillToggle={handleSecondSkillToggle}
-						onEducationToggle={handleSecondEducationToggle}
-						onSexToggle={handleSecondSexToggle}
-						onIslandToggle={handleSecondIslandToggle}
-						compare={true}
-					/>
-				</div>
-			</AccordionItem>
-		</Accordion>
+	<div class="flex w-full items-center justify-between gap-8 md:flex-row">
+		<div class="w-full text-center">
+			<Button class="ocean-background w-full rounded-xl " onclick={() => (hiddenFirst = false)}
+				>Show Options Database 1</Button
+			>
+		</div>
+		<div class="w-full text-center">
+			<Button class="ocean-background w-full rounded-xl" onclick={() => (hiddenSecond = false)}
+				>Show Options Database 2</Button
+			>
+		</div>
 	</div>
+
+	<Drawer
+		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		placement={innerWidth > 1279 ? 'left' : 'top'}
+		bind:hidden={hiddenFirst}
+	>
+		<div class="flex items-center justify-between">
+			<h5
+				id="drawer-label"
+				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
+			>
+				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options Database 1
+			</h5>
+			<CloseButton onclick={() => (hiddenFirst = true)} class="mb-4 dark:text-white" />
+		</div>
+		<div class="w-full">
+			<OptionsSelector
+				optionsState={firstOptionsState}
+				onSkillToggle={handleFirstSkillToggle}
+				onEducationToggle={handleFirstEducationToggle}
+				onSexToggle={handleFirstSexToggle}
+				onIslandToggle={handleFirstIslandToggle}
+				compare={true}
+			/>
+		</div>
+	</Drawer>
+	<Drawer
+		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		placement={innerWidth > 1279 ? 'left' : 'top'}
+		bind:hidden={hiddenSecond}
+	>
+		<div class="flex items-center justify-between">
+			<h5
+				id="drawer-label"
+				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
+			>
+				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options Database 2
+			</h5>
+			<CloseButton onclick={() => (hiddenSecond = true)} class="mb-4 dark:text-white" />
+		</div>
+		<div class="w-full">
+			<OptionsSelector
+				optionsState={secondOptionsState}
+				onSkillToggle={handleSecondSkillToggle}
+				onEducationToggle={handleSecondEducationToggle}
+				onSexToggle={handleSecondSexToggle}
+				onIslandToggle={handleSecondIslandToggle}
+				compare={true}
+			/>
+		</div>
+	</Drawer>
 </section>
