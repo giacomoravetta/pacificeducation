@@ -401,39 +401,35 @@
 
 		<!-- Enhanced Drawers -->
 		<Drawer
-			class="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50/80 to-white/90 p-0 backdrop-blur-sm"
+			class="flex h-full w-full items-center justify-center bg-transparent p-0"
 			placement={innerWidth > 1279 ? 'left' : 'top'}
 			bind:hidden={hiddenFirst}
 		>
-			<div class="h-full w-full overflow-y-auto">
-				<OptionsSelector
-					optionsState={firstOptionsState}
-					onSkillToggle={handleFirstSkillToggle}
-					onEducationToggle={handleFirstEducationToggle}
-					onSexToggle={handleFirstSexToggle}
-					onIslandToggle={handleFirstIslandToggle}
-					compare={true}
-					bind:hidden={hiddenFirst}
-				/>
-			</div>
+			<OptionsSelector
+				optionsState={firstOptionsState}
+				onSkillToggle={handleFirstSkillToggle}
+				onEducationToggle={handleFirstEducationToggle}
+				onSexToggle={handleFirstSexToggle}
+				onIslandToggle={handleFirstIslandToggle}
+				compare={true}
+				bind:hidden={hiddenFirst}
+			/>
 		</Drawer>
 
 		<Drawer
-			class="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50/80 to-white/90 p-0 backdrop-blur-sm"
+			class="flex h-full w-full items-center justify-center bg-transparent p-0"
 			placement={innerWidth > 1279 ? 'left' : 'top'}
 			bind:hidden={hiddenSecond}
 		>
-			<div class="h-full w-full overflow-y-auto">
-				<OptionsSelector
-					optionsState={secondOptionsState}
-					onSkillToggle={handleSecondSkillToggle}
-					onEducationToggle={handleSecondEducationToggle}
-					onSexToggle={handleSecondSexToggle}
-					onIslandToggle={handleSecondIslandToggle}
-					compare={true}
-					bind:hidden={hiddenSecond}
-				/>
-			</div>
+			<OptionsSelector
+				optionsState={secondOptionsState}
+				onSkillToggle={handleSecondSkillToggle}
+				onEducationToggle={handleSecondEducationToggle}
+				onSexToggle={handleSecondSexToggle}
+				onIslandToggle={handleSecondIslandToggle}
+				compare={true}
+				bind:hidden={hiddenSecond}
+			/>
 		</Drawer>
 	</div>
 </section>
