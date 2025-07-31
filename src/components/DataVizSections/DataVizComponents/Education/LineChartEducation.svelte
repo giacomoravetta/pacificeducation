@@ -79,21 +79,18 @@
 			parts.push('all individuals');
 		}
 
-		// Education level
 		if (selectedEducation?.length === 1) {
 			parts.push(`with ${translate(selectedEducation[0]).toLowerCase()} education`);
 		} else if (selectedEducation?.length > 1) {
 			parts.push(`across ${selectedEducation.length} education levels`);
 		}
 
-		// Skills
 		if (selectedSkills?.length === 1) {
 			parts.push(`in ${translate(selectedSkills[0]).toLowerCase()}`);
 		} else if (selectedSkills?.length > 1) {
 			parts.push(`across ${selectedSkills.length} skill categories`);
 		}
 
-		// Location
 		if (selectedIslands?.length === 1) {
 			parts.push(`in ${selectedIslands[0]}`);
 		} else if (selectedIslands?.length > 1) {
@@ -106,11 +103,9 @@
 		return baseText + statsText;
 	});
 
-	// Chart configuration
 	const margin = { top: 40, right: 40, left: 60, bottom: 50 };
 	const graphHeight = 400;
 
-	// Scales
 	const xScale = $derived(
 		scaleLinear()
 			.domain(extent(filteredData, (d) => d.TIME_PERIOD) || [2020, 2023])
@@ -123,7 +118,6 @@
 			.range([graphHeight - margin.bottom, margin.top])
 	);
 
-	// Line generator
 	const lineGenerator = $derived(
 		line()
 			.x((d) => xScale(d.TIME_PERIOD))
@@ -131,7 +125,6 @@
 			.curve(curveLinear)
 	);
 
-	// Animation action for lines
 	function animateLine(node, { delay = 0 } = {}) {
 		const pathLength = node.getTotalLength();
 		node.style.strokeDasharray = pathLength.toString();
@@ -149,7 +142,6 @@
 		};
 	}
 
-	// Event handlers
 	const handleMouseEnter = (e, dataPoint) => {
 		if (svgElement) {
 			const rect = svgElement.getBoundingClientRect();
@@ -173,7 +165,7 @@
 				y: e.clientY - rect.top,
 				data: dataPoint
 			};
-			// Keep tooltip visible for 3 seconds on mobile
+
 			setTimeout(() => {
 				selectedPoint = {};
 			}, 3000);
@@ -185,7 +177,6 @@
 	class="flex w-full flex-col items-center justify-center space-y-8 p-6"
 	bind:clientWidth={graphWidth}
 >
-	<!-- Enhanced Header Section -->
 	<div class="w-full max-w-4xl text-center">
 		<div
 			class="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-2 text-sm font-medium text-blue-700 ring-1 ring-blue-200/50"
@@ -212,7 +203,6 @@
 			</p>
 		</div>
 
-		<!-- Statistics Cards -->
 		{#if descriptionData.hasData}
 			<div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
 				<div
@@ -239,7 +229,6 @@
 		{/if}
 	</div>
 
-	<!-- Enhanced Filter Chips -->
 	{#if optionsState}
 		<div class="w-full max-w-4xl">
 			<div class="mb-4 flex items-center gap-2">
@@ -299,28 +288,11 @@
 						</div>
 					{/each}
 				{/if}
-
-				{#if optionsState.selectedIslands?.length > 0}
-					{#each optionsState.selectedIslands as island, index (island)}
-						<div
-							class="group flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-100 to-orange-50 px-4 py-2 text-sm font-medium text-orange-800 ring-1 ring-orange-200/50 transition-all duration-200 hover:shadow-md hover:shadow-orange-100/50"
-						>
-							<div class="flex size-2 items-center justify-center">
-								<div
-									class="size-2 rounded-full bg-orange-500 transition-transform duration-200 group-hover:scale-110"
-								></div>
-							</div>
-							<span>Island: {island}</span>
-						</div>
-					{/each}
-				{/if}
 			</div>
 		</div>
 	{/if}
 
-	<!-- Enhanced Chart Container -->
 	<div class="relative w-full max-w-6xl">
-		<!-- Enhanced Tooltip -->
 		{#if selectedPoint.data && optionsState?.colorsIslands}
 			<div
 				class="animate-in fade-in slide-in-from-bottom-2 pointer-events-none absolute z-20 min-w-[240px] rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur-sm duration-200"
@@ -374,7 +346,6 @@
 			</div>
 		{/if}
 
-		<!-- Chart Container with Enhanced Styling -->
 		<div
 			class="rounded-3xl border border-gray-200/50 bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-lg"
 		>
@@ -384,9 +355,7 @@
 				height={graphHeight}
 				class="overflow-visible rounded-xl"
 			>
-				<!-- Grid lines -->
 				<g class="grid">
-					<!-- Vertical grid lines -->
 					{#each xScale.ticks(8).filter((tick) => Number.isInteger(tick)) as tick (tick)}
 						<line
 							x1={xScale(tick)}
@@ -400,7 +369,6 @@
 						/>
 					{/each}
 
-					<!-- Horizontal grid lines -->
 					{#each yScale.ticks(5) as tick (tick)}
 						<line
 							x1={margin.left}
@@ -419,7 +387,6 @@
 					{@const islandColor = optionsState?.colorsIslands?.[islandName] || '#3b82f6'}
 
 					<g class="island-group" data-island={islandName}>
-						<!-- Line path -->
 						<path
 							class="line-path"
 							d={lineGenerator(islandData)}
@@ -430,7 +397,6 @@
 							use:animateLine={{ delay: i * 200 }}
 						/>
 
-						<!-- Data points -->
 						{#each islandData as dataPoint, pointIndex (`${islandName}-${dataPoint.TIME_PERIOD}-${pointIndex}`)}
 							<circle
 								class="data-point"
@@ -449,7 +415,6 @@
 					</g>
 				{/each}
 
-				<!-- X Axis -->
 				<g class="x-axis" transform="translate(0, {graphHeight - margin.bottom})">
 					{#each xScale.ticks(8).filter((tick) => Number.isInteger(tick)) as tick (tick)}
 						<text
@@ -465,7 +430,6 @@
 					{/each}
 				</g>
 
-				<!-- Y Axis -->
 				<g class="y-axis" transform="translate({margin.left}, 0)">
 					{#each yScale.ticks(5) as tick (tick)}
 						<text
@@ -485,7 +449,6 @@
 		</div>
 	</div>
 
-	<!-- Enhanced Legend -->
 	{#if groupedData.length > 0 && optionsState?.colorsIslands}
 		<div class="w-full max-w-4xl">
 			<div
@@ -508,7 +471,6 @@
 						<div
 							class="group flex items-center gap-3 rounded-xl border border-gray-100 bg-white/50 p-3 transition-all duration-200 hover:shadow-md hover:shadow-gray-100/50"
 						>
-							<!-- Enhanced legend line indicator -->
 							<div class="flex items-center">
 								<svg width="32" height="16" class="mr-2">
 									<defs>
