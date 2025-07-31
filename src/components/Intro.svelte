@@ -59,9 +59,6 @@
 		if (isSafariBrowser) {
 			showVideo = false;
 			videoSrc = '';
-		} else if (isDeviceSlow || effectiveType === 'slow-2g' || effectiveType === '2g') {
-			showVideo = false;
-			videoSrc = '';
 		} else {
 			showVideo = true;
 			videoSrc = '/Turtle.webm';
@@ -231,8 +228,6 @@
 			if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
 				startAnimation(tl);
 			}
-		} else {
-			console.log('Video disabled - no fallback needed');
 		}
 	});
 
@@ -259,8 +254,6 @@
 					videoElement.addEventListener('error', handleVideoError);
 				}
 			}, 100);
-		} else {
-			console.log('Video disabled for this device/connection');
 		}
 
 		return () => {
