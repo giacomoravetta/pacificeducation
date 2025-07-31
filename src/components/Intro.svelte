@@ -281,9 +281,9 @@
 
 <svelte:window bind:innerWidth bind:innerHeight />
 
-<section class="relative flex min-h-screen w-full items-center justify-center overflow-hidden">
+<section class="relative flex min-h-screen w-full items-center justify-center">
 	{#if showVideo && videoSrc}
-		<div class="absolute inset-0 z-10 overflow-hidden">
+		<div class="absolute inset-0">
 			<video
 				bind:contentRect={videoBox}
 				src={videoSrc}
