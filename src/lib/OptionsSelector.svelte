@@ -248,16 +248,16 @@
 
 <div
 	class="ocean-background
-	relative flex w-full max-w-[80dvw]
-	flex-col
+	relative flex w-full max-w-[90dvw] flex-col
 	overflow-hidden
 	rounded-xl
 	shadow-[0_20px_25px_-5px_rgb(0_0_0_/_0.1),0_10px_10px_-5px_rgb(0_0_0_/_0.04)]
-	backdrop-blur-lg before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10
-	before:to-transparent
+	backdrop-blur-lg
+	before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10 before:to-transparent
+	md:max-w-[80dvw]
 "
 >
-	<div class="  flex items-center justify-end px-6 pt-6">
+	<div class="flex items-center justify-end px-6 pt-6">
 		<CloseButton
 			onclick={() => {
 				console.log('clicked');

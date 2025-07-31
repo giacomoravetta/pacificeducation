@@ -1057,9 +1057,17 @@
 									</div>
 								</div>
 
+								<!-- Year Counter (Hidden on mobile, shown on larger screens) -->
+								<div class="hidden text-right sm:block">
+									<span class="block text-xs text-slate-400">Timeline</span>
+									<span class="block text-sm font-semibold text-slate-600">
+										{availableYears.indexOf(parseInt(selectedYear)) + 1} / {availableYears.length}
+									</span>
+								</div>
+
 								<!-- Close button (mobile only) -->
 								<button
-									class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 sm:hidden"
+									class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
 									onclick={() => (hiddenTime = true)}
 									aria-label="Close time controls"
 								>
@@ -1072,14 +1080,6 @@
 										/>
 									</svg>
 								</button>
-
-								<!-- Year Counter (Hidden on mobile, shown on larger screens) -->
-								<div class="hidden text-right sm:block">
-									<span class="block text-xs text-slate-400">Timeline</span>
-									<span class="block text-sm font-semibold text-slate-600">
-										{availableYears.indexOf(parseInt(selectedYear)) + 1} / {availableYears.length}
-									</span>
-								</div>
 							</div>
 
 							<!-- Progress Indicator (Mobile-friendly) -->
@@ -1146,7 +1146,7 @@
 											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 												<path d="M8 5v14l11-7z" />
 											</svg>
-											<span class="sm:hidden">Play Animation</span>
+											<span>Play Animation</span>
 											<span class="hidden sm:inline">Play</span>
 										</button>
 									{:else}
@@ -1157,7 +1157,7 @@
 											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 												<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
 											</svg>
-											<span class="sm:hidden">Stop Animation</span>
+											<span>Stop Animation</span>
 											<span class="hidden sm:inline">Stop</span>
 										</button>
 									{/if}
@@ -1223,7 +1223,7 @@
 
 						<!-- Mobile-only bottom indicator when playing -->
 						{#if isPlaying}
-							<div class="border-t border-white/20 bg-green-50 p-3 sm:hidden">
+							<div class="border-t border-white/20 bg-green-50 p-3">
 								<div class="flex items-center justify-center gap-2">
 									<div class="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
 									<span class="text-sm font-medium text-green-700">Animation Playing</span>
@@ -1236,7 +1236,7 @@
 
 				<!-- Show Time Controls Button (Mobile only) -->
 				<button
-					class="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 sm:hidden"
+					class="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700"
 					class:hidden={!hiddenTime}
 					onclick={() => (hiddenTime = false)}
 					aria-label="Show time controls"
@@ -1307,237 +1307,6 @@
 		bind:hidden
 	/>
 </Drawer>
-
-<!-- Mobile-Responsive Time Slider -->
-<div class=" relative">
-	<!-- Mobile: Full width bottom sheet -->
-	<!-- Desktop: Fixed width left corner -->
-	<div
-		class="hover:shadow-3xl rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300 sm:rounded-lg"
-	>
-		<!-- Time Slider Container -->
-		<div class="pointer-events-auto p-4 sm:p-4">
-			<!-- Header Section (Enhanced for mobile) -->
-			<div class="mb-4 flex items-center justify-between sm:mb-3">
-				<div class="flex items-center gap-3">
-					<!-- Time icon (larger on mobile) -->
-					<div
-						class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 sm:h-8 sm:w-8"
-					>
-						<svg
-							class="h-5 w-5 text-blue-600 sm:h-4 sm:w-4"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-					</div>
-					<div>
-						<span class="block text-sm font-medium text-slate-500 sm:text-xs">Current Year</span>
-						<span class="block text-2xl font-bold text-blue-600 sm:text-lg">
-							{selectedYear}
-						</span>
-					</div>
-				</div>
-
-				<!-- Year progress indicator (mobile only) -->
-				<div class="text-right sm:hidden">
-					<span class="block text-xs font-medium text-slate-400">Progress</span>
-					<span class="block text-lg font-bold text-slate-700">
-						{availableYears.indexOf(parseInt(selectedYear)) + 1}/{availableYears.length}
-					</span>
-				</div>
-
-				<!-- Desktop year counter -->
-				<div class="hidden text-right sm:block">
-					<span class="block text-xs text-slate-400">Year</span>
-					<span class="block text-sm font-semibold text-slate-600">
-						{availableYears.indexOf(parseInt(selectedYear)) + 1} / {availableYears.length}
-					</span>
-				</div>
-			</div>
-
-			<!-- Progress Bar (Mobile-friendly visual indicator) -->
-			<div class="mb-4 sm:hidden">
-				<div class="mb-2 flex items-center justify-between">
-					<span class="text-xs font-medium text-slate-600">Timeline Progress</span>
-					<span class="text-xs text-slate-500">
-						{Math.round(
-							(availableYears.indexOf(parseInt(selectedYear)) / (availableYears.length - 1)) * 100
-						)}%
-					</span>
-				</div>
-				<div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-					<div
-						class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
-						style="width: {(availableYears.indexOf(parseInt(selectedYear)) /
-							(availableYears.length - 1)) *
-							100}%"
-					></div>
-				</div>
-			</div>
-
-			<!-- Range Slider Section -->
-			<div class="mb-4 sm:mb-3">
-				<div class="relative">
-					<!-- Touch-friendly slider -->
-					<input
-						type="range"
-						min="0"
-						max={availableYears.length - 1}
-						value={availableYears.indexOf(parseInt(selectedYear))}
-						oninput={(e) => {
-							const index = parseInt(e.target.value);
-							selectedYear = availableYears[index];
-						}}
-						class="time-slider h-4 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-400 transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
-					/>
-
-					<!-- Year range markers -->
-					<div class="mt-2 flex justify-between text-xs font-medium text-slate-500 sm:mt-1">
-						<span
-							class="rounded-md bg-slate-100 px-2 py-1 font-semibold sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal"
-						>
-							{availableYears[0]}
-						</span>
-						<span
-							class="rounded-md bg-slate-100 px-2 py-1 font-semibold sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal"
-						>
-							{availableYears[availableYears.length - 1]}
-						</span>
-					</div>
-				</div>
-			</div>
-
-			<!-- Animation Controls -->
-			<div class="space-y-3 sm:space-y-0">
-				<!-- Mobile: Stacked layout -->
-				<div class="flex gap-2 sm:hidden">
-					<!-- Play/Pause (Full width on mobile) -->
-					{#if !isPlaying}
-						<button
-							onclick={playAnimation}
-							disabled={availableYears.length < 2}
-							class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-								<path d="M8 5v14l11-7z" />
-							</svg>
-							<span>Play Animation</span>
-						</button>
-					{:else}
-						<button
-							onclick={stopAnimation}
-							class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95"
-						>
-							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-								<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-							</svg>
-							<span>Stop Animation</span>
-						</button>
-					{/if}
-
-					<!-- Reset Button (Mobile) -->
-					<button
-						onclick={resetToFirstYear}
-						title="Reset to first year"
-						class="flex items-center justify-center rounded-xl bg-slate-600 px-4 py-3 text-white shadow-lg transition-all duration-200 hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none active:scale-95"
-					>
-						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-							/>
-						</svg>
-					</button>
-				</div>
-
-				<!-- Mobile: Info row -->
-				<div class="flex items-center justify-between rounded-lg bg-slate-50 p-3 sm:hidden">
-					<div class="flex items-center gap-2">
-						<svg
-							class="h-4 w-4 text-slate-500"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						<span class="text-sm font-medium text-slate-600">Timeline Info</span>
-					</div>
-					<div class="text-right">
-						<div class="text-sm font-semibold text-slate-700">
-							{availableYears.length} years available
-						</div>
-						{#if isPlaying}
-							<div class="text-xs text-green-600">▶️ Playing (1.5s per year)</div>
-						{:else}
-							<div class="text-xs text-slate-500">⏸️ Paused</div>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Desktop: Horizontal layout -->
-				<div class="hidden items-center gap-2 sm:flex">
-					{#if !isPlaying}
-						<button
-							onclick={playAnimation}
-							class="flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:outline-none"
-							disabled={availableYears.length < 2}
-						>
-							<span>▶️</span>
-							<span>Play</span>
-						</button>
-					{:else}
-						<button
-							onclick={stopAnimation}
-							class="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-1 focus:outline-none"
-						>
-							<span>⏸️</span>
-							<span>Stop</span>
-						</button>
-					{/if}
-
-					<button
-						onclick={resetToFirstYear}
-						class="flex items-center gap-1 rounded bg-slate-600 px-2 py-1.5 text-sm text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-1 focus:outline-none"
-						title="Reset to first year"
-					>
-						<span>🔄</span>
-					</button>
-
-					<div class="ml-1 text-xs text-slate-600">
-						{availableYears.length} years
-					</div>
-				</div>
-			</div>
-
-			<!-- Animation status indicator (Mobile) -->
-			{#if isPlaying}
-				<div
-					class="mt-3 flex items-center justify-center gap-2 rounded-lg bg-green-50 p-2 sm:hidden"
-				>
-					<div class="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
-					<span class="text-sm font-medium text-green-700">Animation Playing</span>
-					<span class="text-xs text-green-600">(1.5s per year)</span>
-				</div>
-			{/if}
-		</div>
-	</div>
-</div>
 
 <style>
 	@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
