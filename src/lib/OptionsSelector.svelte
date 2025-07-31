@@ -11,6 +11,7 @@
 
 	gsap.registerPlugin(Draggable, InertiaPlugin);
 	let hiddenDrawer = $state(true);
+
 	interface Props {
 		optionsState: {
 			selectedSkills: string[];
@@ -39,14 +40,12 @@
 		hidden = $bindable()
 	}: Props = $props();
 
-	// Derive static lists from data using Svelte 5 runes
 	const skills = $derived([
 		...new Set(appData.skills.map((skill) => skill['COMPOSITE_BREAKDOWN']))
 	]);
 	const educationTypes = $derived([...new Set(appData.skills.map((skill) => skill['EDUCATION']))]);
 	const sexes = $derived([...new Set(appData.skills.map((skill) => skill['SEX']))]);
 
-	// Filter data based on current selections
 	const filteredData = $derived.by(() => {
 		return appData.skills.filter((d) => {
 			const skillMatch =
@@ -64,13 +63,10 @@
 		});
 	});
 
-	// Derive available islands from filtered data
 	const islands = $derived([...new Set(filteredData.map((d) => d['GEO_PICT']))]);
 
-	// Store GSAP draggable instances for cleanup
 	let draggableInstances: any[] = [];
 
-	// Utility functions
 	const determineOptionType = (selectedOption: string): string | undefined => {
 		if (islands.includes(selectedOption)) return 'island';
 		if (skills.includes(selectedOption)) return 'skill';
@@ -79,7 +75,6 @@
 		return undefined;
 	};
 
-	// Handler for filter selection
 	const handleFilterClick = (e: MouseEvent) => {
 		const target = e.currentTarget as HTMLElement;
 		const selectedOption = translate(target.innerText.trim());
@@ -101,16 +96,12 @@
 		}
 	};
 
-	// GSAP drag scrolling implementation - using container approach
 	function gsapDragScroll(node: HTMLElement) {
 		let isDragging = false;
-		let startTime = 0;
 
-		// Find the scrollable content wrapper
 		const contentWrapper = node.querySelector('.scroll-content') as HTMLElement;
 		if (!contentWrapper) return { destroy: () => {} };
 
-		// Calculate bounds for dragging
 		const getBounds = () => {
 			const containerWidth = node.offsetWidth;
 			const contentWidth = contentWrapper.scrollWidth;
@@ -132,7 +123,6 @@
 			onPress() {
 				gsap.killTweensOf(contentWrapper);
 				isDragging = false;
-				startTime = Date.now();
 			},
 			onDragStart() {
 				isDragging = true;
@@ -143,44 +133,26 @@
 				node.classList.remove('cursor-grabbing');
 				contentWrapper.style.cursor = 'grab';
 
-				// Prevent clicks for a short time after drag
-				setTimeout(
-					() => {
-						isDragging = false;
-					},
-					Math.max(50, Date.now() - startTime > 200 ? 100 : 50)
-				);
+				setTimeout(() => {
+					isDragging = false;
+				}, 100);
 			},
 			onDrag() {
-				// Update bounds dynamically in case content changes
 				this.applyBounds(getBounds());
-
-				// Mark as dragging for click prevention
-				if (node.classList.contains('islands-section')) {
-					node.dataset.dragging = 'true';
-				}
 			}
 		})[0];
 
-		// Handle click prevention during drag
 		const handleClick = (e: MouseEvent) => {
-			if (isDragging || node.dataset.dragging === 'true') {
+			if (isDragging) {
 				e.preventDefault();
 				e.stopPropagation();
 				e.stopImmediatePropagation();
-				// Clean up dragging flag
-				setTimeout(() => {
-					delete node.dataset.dragging;
-				}, 10);
 				return false;
 			}
 		};
 
-		// Add click handler with capture
 		node.addEventListener('click', handleClick, true);
-		node.addEventListener('mousedown', handleClick, true);
 
-		// Store instance for cleanup
 		draggableInstances.push(draggableInstance);
 
 		return {
@@ -192,15 +164,11 @@
 						draggableInstances.splice(index, 1);
 					}
 				}
-
-				// Remove event listeners
 				node.removeEventListener('click', handleClick, true);
-				node.removeEventListener('mousedown', handleClick, true);
 			}
 		};
 	}
 
-	// Cleanup GSAP instances on component destroy
 	onMount(() => {
 		return () => {
 			draggableInstances.forEach((instance) => {
@@ -212,7 +180,6 @@
 		};
 	});
 
-	// Helper functions for determining chip states
 	const isSkillAvailable = (skill: string) => {
 		return (
 			filteredData.some((d) => d['COMPOSITE_BREAKDOWN'] === skill) ||
@@ -259,7 +226,7 @@
 >
 	<div class="flex items-center justify-between px-6 pt-6">
 		<Button
-			class="w-0 border border-white bg-transparent text-xl text-white hover:bg-blue-600"
+			class="w-0 border border-white bg-transparent text-xl text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
 			onclick={() => (hiddenDrawer = false)}><InfoCircleSolid /></Button
 		>
 
@@ -267,50 +234,23 @@
 			onclick={() => {
 				hidden = true;
 			}}
-			class=" text-white hover:bg-blue-600"
+			class="text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
 		/>
 	</div>
-	<!-- Skills Section -->
+
 	<div
-		class="
-		relative border-b border-white/15
-		px-6 py-6
-		transition-all duration-300 ease-out
-		hover:bg-white/5
-	"
+		class="relative border-b border-white/15 px-6 py-6 transition-all duration-300 ease-out hover:bg-white/5"
 	>
 		<div class="mb-4 flex items-center gap-3">
 			<div
-				class="
-				flex h-8 w-8
-				items-center justify-center rounded-lg
-				bg-white/20 text-[min(3dvw,17px)]
-				text-white backdrop-blur-sm
-			"
+				class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-[min(3dvw,17px)] text-white backdrop-blur-sm"
 			>
 				🧮
 			</div>
-			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Skills</h3>
+			<h3 class="text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Skills</h3>
 		</div>
 		<div
-			class="
-			cursor-grab
-			overflow-hidden
-			active:cursor-grabbing
-			[&::-webkit-scrollbar]:h-2
-			[&::-webkit-scrollbar-thumb]:rounded-full
-			[&::-webkit-scrollbar-thumb]:border-2
-			[&::-webkit-scrollbar-thumb]:border-white/20
-			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
-			[&::-webkit-scrollbar-thumb]:from-blue-400/60
-			[&::-webkit-scrollbar-thumb]:to-cyan-300/60
-			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
-			[&::-webkit-scrollbar-thumb]:transition-all
-			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-blue-300/80
-			hover:[&::-webkit-scrollbar-thumb]:to-cyan-200/80 hover:[&::-webkit-scrollbar-thumb]:shadow-lg
-			hover:[&::-webkit-scrollbar-thumb]:shadow-blue-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
-		"
-			style="scrollbar-width: thin; scrollbar-color: rgba(96, 165, 250, 0.6) rgba(255, 255, 255, 0.1);"
+			class="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-blue-400/60 hover:scrollbar-thumb-blue-300/80 cursor-grab overflow-hidden active:cursor-grabbing"
 			use:gsapDragScroll
 		>
 			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
@@ -321,15 +261,13 @@
 						disabled={!isAvailable}
 						onclick={handleFilterClick}
 						class="
-							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0 transform-gpu
-							items-center gap-2 rounded-2xl
-							border border-white/20 bg-white/15
-							px-5 py-3
-							text-[min(3dvw,17px)] font-medium whitespace-nowrap backdrop-blur-sm
-							transition-all
-							duration-300
+							flex flex-shrink-0 transform-gpu items-center gap-2 rounded-2xl
+							px-5 py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap !ring-0
+							backdrop-blur-sm transition-all duration-300 !outline-none focus:!ring-0 focus:!outline-none focus-visible:!outline-none
 
-							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{isSelected
+							? 'border border-white/90 bg-white/90 text-blue-900 shadow-lg'
+							: 'border border-white/20 bg-white/15'}
 							{!isAvailable
 							? 'pointer-events-none cursor-not-allowed opacity-30'
 							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
@@ -342,48 +280,19 @@
 		</div>
 	</div>
 
-	<!-- Education Section -->
 	<div
-		class="
-		relative border-b border-white/15
-		px-6 py-6
-		transition-all duration-300 ease-out
-		hover:bg-white/5
-	"
+		class="relative border-b border-white/15 px-6 py-6 transition-all duration-300 ease-out hover:bg-white/5"
 	>
 		<div class="mb-4 flex items-center gap-3">
 			<div
-				class="
-				flex h-8 w-8
-				items-center justify-center rounded-lg
-				bg-white/20 text-[min(3dvw,17px)]
-				text-white
-				backdrop-blur-sm
-			"
+				class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-[min(3dvw,17px)] text-white backdrop-blur-sm"
 			>
 				📚
 			</div>
-			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Education</h3>
+			<h3 class="text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Education</h3>
 		</div>
 		<div
-			class="
-			cursor-grab
-			overflow-hidden
-			active:cursor-grabbing
-			[&::-webkit-scrollbar]:h-2
-			[&::-webkit-scrollbar-thumb]:rounded-full
-			[&::-webkit-scrollbar-thumb]:border-2
-			[&::-webkit-scrollbar-thumb]:border-white/20
-			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
-			[&::-webkit-scrollbar-thumb]:from-emerald-400/60
-			[&::-webkit-scrollbar-thumb]:to-teal-300/60
-			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
-			[&::-webkit-scrollbar-thumb]:transition-all
-			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-emerald-300/80
-			hover:[&::-webkit-scrollbar-thumb]:to-teal-200/80
-			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-emerald-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
-		"
-			style="scrollbar-width: thin; scrollbar-color: rgba(52, 211, 153, 0.6) rgba(255, 255, 255, 0.1);"
+			class="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-emerald-400/60 hover:scrollbar-thumb-emerald-300/80 cursor-grab overflow-hidden active:cursor-grabbing"
 			use:gsapDragScroll
 		>
 			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
@@ -394,20 +303,16 @@
 						disabled={!isAvailable}
 						onclick={handleFilterClick}
 						class="
-							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-							transform-gpu items-center gap-2
-							rounded-2xl border border-white/20
-							bg-white/15 px-5
-							py-3 text-[min(3dvw,17px)] font-medium
-							whitespace-nowrap
-							backdrop-blur-sm transition-all
-							duration-300
+							flex flex-shrink-0 transform-gpu items-center gap-2 rounded-2xl
+							px-5 py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap !ring-0
+							backdrop-blur-sm transition-all duration-300 !outline-none focus:!ring-0 focus:!outline-none focus-visible:!outline-none
 
-							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{isSelected
+							? 'border border-white/90 bg-white/90 text-blue-900 shadow-lg'
+							: 'border border-white/20 bg-white/15'}
 							{!isAvailable
 							? 'pointer-events-none cursor-not-allowed opacity-30'
 							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
-
 						"
 					>
 						<span>{translate(education)}</span>
@@ -417,47 +322,19 @@
 		</div>
 	</div>
 
-	<!-- Gender Section -->
 	<div
-		class="
-		relative border-b border-white/15
-		px-6 py-6
-		transition-all duration-300 ease-out
-		hover:bg-white/5
-	"
+		class="relative border-b border-white/15 px-6 py-6 transition-all duration-300 ease-out hover:bg-white/5"
 	>
 		<div class="mb-4 flex items-center gap-3">
 			<div
-				class="
-				flex h-8 w-8
-				items-center justify-center rounded-lg
-				bg-white/20 text-[min(3dvw,17px)]
-				text-white backdrop-blur-sm
-			"
+				class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-[min(3dvw,17px)] text-white backdrop-blur-sm"
 			>
 				🧑
 			</div>
-			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Gender</h3>
+			<h3 class="text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Gender</h3>
 		</div>
 		<div
-			class="
-			cursor-grab
-			overflow-hidden
-			active:cursor-grabbing
-			[&::-webkit-scrollbar]:h-2
-			[&::-webkit-scrollbar-thumb]:rounded-full
-			[&::-webkit-scrollbar-thumb]:border-2
-			[&::-webkit-scrollbar-thumb]:border-white/20
-			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
-			[&::-webkit-scrollbar-thumb]:from-purple-400/60
-			[&::-webkit-scrollbar-thumb]:to-pink-300/60
-			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
-			[&::-webkit-scrollbar-thumb]:transition-all
-			[&::-webkit-scrollbar-thumb]:duration-300 hover:[&::-webkit-scrollbar-thumb]:from-purple-300/80
-			hover:[&::-webkit-scrollbar-thumb]:to-pink-200/80
-			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-purple-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:backdrop-blur-sm
-		"
-			style="scrollbar-width: thin; scrollbar-color: rgba(196, 181, 253, 0.6) rgba(255, 255, 255, 0.1);"
+			class="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-purple-400/60 hover:scrollbar-thumb-purple-300/80 cursor-grab overflow-hidden active:cursor-grabbing"
 			use:gsapDragScroll
 		>
 			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
@@ -468,16 +345,13 @@
 						disabled={!isAvailable}
 						onclick={handleFilterClick}
 						class="
-							cubic-bezier(0.4, 0, 0.2, 1) flex flex-shrink-0
-							transform-gpu items-center gap-2
-							rounded-2xl border border-white/20
-							bg-white/15 px-5
-							py-3 text-[min(3dvw,17px)] font-medium
-							whitespace-nowrap
-							backdrop-blur-sm
-							transition-all duration-300
+							flex flex-shrink-0 transform-gpu items-center gap-2 rounded-2xl
+							px-5 py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap !ring-0
+							backdrop-blur-sm transition-all duration-300 !outline-none focus:!ring-0 focus:!outline-none focus-visible:!outline-none
 
-							{isSelected ? 'border-white/80 bg-white/90 text-blue-900 shadow-lg' : ''}
+							{isSelected
+							? 'border border-white/90 bg-white/90 text-blue-900 shadow-lg'
+							: 'border border-white/20 bg-white/15'}
 							{!isAvailable
 							? 'pointer-events-none cursor-not-allowed opacity-30'
 							: 'hover:border-white/40 hover:bg-white/25 hover:shadow-lg active:scale-95'}
@@ -490,52 +364,18 @@
 		</div>
 	</div>
 
-	<!-- Islands Section -->
-
 	{#if enableIslands}
-		<div
-			class="
-		relative px-6 py-6
-		transition-all duration-300 ease-out
-		hover:bg-white/5
-	"
-		>
+		<div class="relative px-6 py-6 transition-all duration-300 ease-out hover:bg-white/5">
 			<div class="mb-4 flex items-center gap-3">
 				<div
-					class="
-				flex h-8 w-8
-				items-center justify-center rounded-lg
-				bg-white/20 text-[min(3dvw,17px)]
-				text-white backdrop-blur-sm
-			"
+					class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-[min(3dvw,17px)] text-white backdrop-blur-sm"
 				>
 					🏝️
 				</div>
-				<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Islands</h3>
+				<h3 class="text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Islands</h3>
 			</div>
 			<div
-				class="
-			islands-section
-			cursor-grab
-			overflow-hidden
-			active:cursor-grabbing
-			[&::-webkit-scrollbar]:h-2
-			[&::-webkit-scrollbar-thumb]:rounded-full
-			[&::-webkit-scrollbar-thumb]:border-2
-			[&::-webkit-scrollbar-thumb]:border-white/20
-			[&::-webkit-scrollbar-thumb]:bg-gradient-to-r
-			[&::-webkit-scrollbar-thumb]:from-orange-400/60
-			[&::-webkit-scrollbar-thumb]:via-amber-300/60
-			[&::-webkit-scrollbar-thumb]:to-yellow-300/60
-			[&::-webkit-scrollbar-thumb]:backdrop-blur-sm
-			[&::-webkit-scrollbar-thumb]:transition-all
-			[&::-webkit-scrollbar-thumb]:duration-300
-			hover:[&::-webkit-scrollbar-thumb]:from-orange-300/80 hover:[&::-webkit-scrollbar-thumb]:via-amber-200/80
-			hover:[&::-webkit-scrollbar-thumb]:to-yellow-200/80
-			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-amber-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10
-			[&::-webkit-scrollbar-track]:backdrop-blur-sm
-		"
-				style="scrollbar-width: thin; scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);"
+				class="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-orange-400/60 hover:scrollbar-thumb-orange-300/80 cursor-grab overflow-hidden active:cursor-grabbing"
 				use:gsapDragScroll
 			>
 				<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
@@ -548,20 +388,16 @@
 								(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
 							onclick={handleFilterClick}
 							class="
-						cubic-bezier(0.4, 0,
-							0.2, 1) flex flex-shrink-0 transform-gpu items-center
-							gap-2 rounded-2xl px-5
-							py-3 text-[min(3dvw,17px)] font-medium whitespace-nowrap text-white backdrop-blur-sm
-							transition-all
-							duration-300
-							{isSelected ? `border shadow-lg` : 'border border-white/20 bg-white/15'}
-							{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
+								flex flex-shrink-0 transform-gpu items-center gap-2 rounded-2xl px-5 py-3
+								text-[min(3dvw,17px)] font-medium whitespace-nowrap text-white !ring-0
+								backdrop-blur-sm transition-all duration-300 !outline-none focus:!ring-0 focus:!outline-none focus-visible:!outline-none
+
+								{isSelected ? 'border shadow-lg' : 'border border-white/20 bg-white/15'}
+								{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
 								? 'pointer-events-none cursor-not-allowed opacity-30'
-								: 'hover:bg-white/25 hover:shadow-lg '}
-						"
-							style="
-							{isSelected ? `background: ${islandColor}; border-color: ${islandColor};` : ''}
-						"
+								: 'hover:bg-white/25 hover:shadow-lg active:scale-95'}
+							"
+							style={isSelected ? `background: ${islandColor}; border-color: ${islandColor};` : ''}
 						>
 							<span>{island}</span>
 						</button>
@@ -582,7 +418,10 @@
 >
 	<div class="overflow-hidden">
 		<div class="flex w-full justify-end">
-			<CloseButton onclick={() => (hiddenDrawer = true)} class="mb-4 text-white" />
+			<CloseButton
+				onclick={() => (hiddenDrawer = true)}
+				class="mb-4 text-white focus:ring-0 focus:outline-none"
+			/>
 		</div>
 
 		<div class="relative p-8 text-white">
@@ -607,7 +446,6 @@
 				<p class="mt-2 text-blue-100/80">Master these simple controls to explore your data</p>
 			</div>
 
-			<!-- Instructions grid -->
 			<div class="flex w-full justify-center">
 				<div class="flex flex-col items-center justify-center gap-6 md:max-w-[40%]">
 					<div
@@ -637,7 +475,6 @@
 						<div
 							class="absolute inset-0 bg-gradient-to-r from-green-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
 						></div>
-
 						<div class="min-w-0 flex-1">
 							<h3 class="mb-2 text-xl font-semibold text-white">Select Options</h3>
 							<p class="leading-relaxed text-blue-100/90">
@@ -657,7 +494,6 @@
 						<div
 							class="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
 						></div>
-
 						<div class="min-w-0 flex-1">
 							<h3 class="mb-2 text-xl font-semibold text-white">Deselect Options</h3>
 							<p class="leading-relaxed text-blue-100/90">
@@ -677,10 +513,31 @@
 </Drawer>
 
 <style>
-	/* Ensure grab cursor works consistently across browsers */
 	.cursor-grabbing {
 		cursor: grabbing !important;
 		cursor: -webkit-grabbing !important;
 		cursor: -moz-grabbing !important;
+	}
+
+	button:focus,
+	button:focus-visible,
+	button:active {
+		outline: none !important;
+		box-shadow: none !important;
+		border-color: inherit !important;
+	}
+
+	button {
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	button:focus,
+	button:active,
+	button:focus-visible {
+		border-color: inherit !important;
+	}
+
+	button:focus:not(:focus-visible) {
+		outline: none !important;
 	}
 </style>
