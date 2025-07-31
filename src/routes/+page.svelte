@@ -1,18 +1,15 @@
 <script lang="ts">
-	import { appData } from '../state.svelte';
-
-	import Intro from '$lib/Intro.svelte';
-	import GeneralEducationSection from '../components/sections/GeneralEducationSection.svelte';
-	import CompareEducationSection from '../components/sections/CompareEducationSection.svelte';
+	import Intro from '../components/Intro.svelte';
+	import DataVizSection from '../components/DataVizSection.svelte';
+	import Description from '../components/Description.svelte';
+	import Footer from '../components/Footer.svelte';
+	import UnderwaterOceanBackground from '../components/UnderwaterOceanBackground.svelte';
 </script>
 
-<div
-	class="flex h-[1000dvh] w-screen flex-col items-center overflow-hidden bg-linear-to-br from-blue-500 via-teal-600 to-emerald-700"
->
+<UnderwaterOceanBackground />
+<div class="relative flex w-full flex-col items-center overflow-hidden pb-10">
 	<Intro />
-
-	<GeneralEducationSection />
-	<CompareEducationSection />
-
-	<!-- <CorrelationsChart /> -->
+	<Description />
+	<DataVizSection />
+	<Footer />
 </div>

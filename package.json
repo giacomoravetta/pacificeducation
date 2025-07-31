@@ -29,6 +29,7 @@
 		"flowbite-svelte": "^1.10.16",
 		"flowbite-svelte-icons": "^2.2.1",
 		"globals": "^16.0.0",
+		"leaflet": "^1.9.4",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.11",
