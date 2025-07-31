@@ -1,38 +1,36 @@
-# sv
+# Pacific Islands Education Analytics Dashboard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+An interactive data visualization exploring literacy and numeracy proficiency levels across Pacific Island nations, revealing educational trends and opportunities for targeted development initiatives in the region.
 
-## Creating a project
+![Pacific Islands Education Dashboard](https://img.shields.io/badge/Status-Active-brightgreen) ![Built with Svelte](https://img.shields.io/badge/Built%20with-Svelte%205-ff3e00) ![License](https://img.shields.io/badge/License-MIT-blue)
 
-If you're seeing this, you've probably already done this step. Congrats!
+## 🌊 Project Overview
 
-```bash
-# create a new project in the current directory
-npx sv create
+This dashboard serves as a powerful tool for policymakers, educators, and development organizations working to improve educational outcomes in the Pacific region. By making complex educational data accessible and interactive, it enables evidence-based decision making and targeted interventions.
 
-# create a new project in my-app
-npx sv create my-app
-```
+**Created for the [Pacific Data Challenge](https://pacificdatavizchallenge.org/)** by [Giacomo Ravetta](https://www.giacomoravetta.com)
 
-## Developing
+## ✨ Key Features
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### 📊 Interactive Visualizations
+Dynamic charts and maps allowing users to explore educational data across different Pacific Island nations, age groups, and proficiency levels.
 
-```bash
-npm run dev
+## 📊 Data Source
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+The visualization uses authoritative data from the [Pacific Data Hub](https://stats.pacificdata.org/), specifically from the **Pacific 2050: People-Centered Development (Thematic Area 2)** dataset.
 
-## Building
+### Primary Metric
+**Proportion of population in specific age groups achieving at least fixed proficiency levels in literacy and numeracy skills**
 
-To create a production version of your app:
+- **Dataset Label:** `SE_TOT_PRFL`
 
-```bash
-npm run build
-```
 
-You can preview the production build with `npm run preview`.
+## 🛠️ Technology Stack
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+This dashboard leverages cutting-edge web technologies to deliver a fast, responsive, and accessible user experience:
+
+- **[Svelte 5](https://svelte.dev/)** - Reactive web framework for building user interfaces
+- **[D3.js](https://d3js.org/)** - Data visualization library for creating interactive charts
+- **[GSAP](https://greensock.com/gsap/)** - Animation library for smooth, engaging interactions
+- **[Flowbite Svelte](https://flowbite-svelte.com/)** - Svelte component library for rapid UI development
+- **[TailwindCSS](https://tailwindcss.com/)** - Utility-first CSS framework for responsive design
