@@ -259,7 +259,7 @@
 >
 	<div class="flex items-center justify-between px-6 pt-6">
 		<Button
-			class="bg-transparent text-white hover:bg-blue-600"
+			class="w-0 border border-white bg-transparent text-xl text-white hover:bg-blue-600"
 			onclick={() => (hiddenDrawer = false)}><InfoCircleSolid /></Button
 		>
 
@@ -574,7 +574,7 @@
 
 <Drawer
 	position="absolute"
-	class="ocean-background  top-1/2 left-1/2 h-full w-full -translate-1/2 md:max-h-[80dvh] md:max-w-[80dvw]"
+	class="ocean-background top-1/2 left-1/2 h-full w-full -translate-1/2 md:max-h-[80dvh] md:max-w-[80dvw]"
 	bind:hidden={hiddenDrawer}
 	id="sidebar"
 	aria-controls="sidebar"
