@@ -19,9 +19,7 @@
 >
 	<div class="relative container mx-auto px-6 py-20 lg:px-8 lg:py-32">
 		<div class="mx-auto max-w-5xl">
-			<!-- Enhanced content cards -->
 			<div class="mb-16 space-y-8">
-				<!-- Introduction card -->
 				<div
 					class="group relative overflow-hidden rounded-3xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-8 backdrop-blur-md transition-all duration-500 hover:border-white/30 hover:bg-white/15 hover:shadow-2xl hover:shadow-blue-500/10 lg:p-10"
 				>
@@ -36,7 +34,6 @@
 					</p>
 				</div>
 
-				<!-- Key questions card with enhanced styling -->
 				<div
 					class="group relative overflow-hidden rounded-3xl border border-amber-200/30 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent p-8 backdrop-blur-md transition-all duration-500 hover:border-amber-200/50 hover:bg-amber-500/15 hover:shadow-2xl hover:shadow-amber-500/20 lg:p-10"
 				>
@@ -44,7 +41,6 @@
 						class="absolute -top-20 -left-20 size-40 rounded-full bg-gradient-to-br from-amber-400/20 to-transparent blur-3xl transition-all duration-500 group-hover:scale-110"
 					></div>
 
-					<!-- Question mark icon -->
 					<div class="mb-6 flex justify-center">
 						<div
 							class="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400/20 to-orange-500/20 backdrop-blur-sm"
@@ -96,15 +92,12 @@
 				</div>
 			</div>
 
-			<!-- Enhanced call-to-action -->
 			<div class="flex justify-center">
 				<div class="group relative">
-					<!-- Glow effect -->
 					<div
 						class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-500 opacity-30 blur-lg transition-all duration-500 group-hover:opacity-50 group-hover:blur-xl"
 					></div>
 
-					<!-- Button -->
 					<button
 						onclick={() => {
 							handleClick('dataviz-section');
