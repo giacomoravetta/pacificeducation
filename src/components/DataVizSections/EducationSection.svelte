@@ -4,7 +4,6 @@
 	import { appData } from '../../state.svelte';
 
 	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
-	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 
 	let innerWidth = $state();
 
@@ -34,29 +33,6 @@
 			Tuvalu: '#06B6D4' // Cyan
 		}
 	});
-
-	const skills = [...new Set(appData.skills.map((skill) => skill['COMPOSITE_BREAKDOWN']))];
-	const educationTypes = [...new Set(appData.skills.map((skill) => skill['EDUCATION']))];
-	const sexes = [...new Set(appData.skills.map((skill) => skill['SEX']))];
-
-	const filteredData = $derived.by(() => {
-		return appData.skills.filter((d) => {
-			const skillMatch =
-				optionsState.selectedSkills.length === 0 ||
-				optionsState.selectedSkills.includes(d.COMPOSITE_BREAKDOWN);
-
-			const educationMatch =
-				optionsState.selectedEducation.length === 0 ||
-				optionsState.selectedEducation.includes(d.EDUCATION);
-
-			const sexMatch =
-				optionsState.selectedSexes.length === 0 || optionsState.selectedSexes.includes(d.SEX);
-
-			return skillMatch && educationMatch && sexMatch;
-		});
-	});
-
-	const islands = $derived([...new Set(filteredData.map((d) => d['GEO_PICT']))]);
 
 	const handleSkillToggle = (skill: string) => {
 		const isSelected = optionsState.selectedSkills.includes(skill);
