@@ -5,7 +5,7 @@
 	import UnderwaterOceanBackground from '../components/UnderwaterOceanBackground.svelte';
 </script>
 
-<div class="relative flex w-screen flex-col items-center overflow-hidden">
+<div class="relative flex w-screen flex-col items-center overflow-hidden pb-10">
 	<UnderwaterOceanBackground />
 	<Intro />
 	<Description />

@@ -1147,7 +1147,6 @@
 												<path d="M8 5v14l11-7z" />
 											</svg>
 											<span>Play Animation</span>
-											<span class="hidden sm:inline">Play</span>
 										</button>
 									{:else}
 										<button
@@ -1158,7 +1157,6 @@
 												<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
 											</svg>
 											<span>Stop Animation</span>
-											<span class="hidden sm:inline">Stop</span>
 										</button>
 									{/if}
 
@@ -1269,7 +1267,7 @@
 			{/if}
 
 			<Button
-				class="pointer-events-auto absolute top-[2%] left-[2%]"
+				class="pointer-events-auto absolute top-[2%] left-[2%] bg-blue-500 hover:bg-blue-700"
 				onclick={() => (hidden = false)}>Show Options</Button
 			>
 		</div>

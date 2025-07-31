@@ -6,7 +6,7 @@
 </script>
 
 <section id="dataviz-section" class="relative flex min-h-screen w-full justify-center pt-10">
-	<div class=" flex w-full max-w-4xl flex-col gap-10 rounded-2xl bg-yellow-50 px-4 pt-10">
+	<div class=" flex w-full max-w-4xl flex-col gap-10 rounded-2xl bg-yellow-50 px-4 py-10">
 		<EducationSection />
 		<CompareEducationSection />
 		<GeoSection />

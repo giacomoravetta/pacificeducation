@@ -102,6 +102,26 @@
 </script>
 
 <section class="geo-section">
+	<!-- Map Section Header -->
+	<div class="mb-8 text-center">
+		<div
+			class="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gray-100 to-gray-50 px-4 py-2 text-sm font-medium text-gray-700 ring-1 ring-gray-200/50"
+		>
+			<svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 01.553-.894L9 2l6 3 5.447-2.724A1 1 0 0121 3.382v10.764a1 1 0 01-.553.894L15 18l-6-3z"
+				/>
+			</svg>
+			<span>Interactive Map</span>
+		</div>
+		<h2 class="text-2xl font-bold text-gray-900 lg:text-3xl">Geographic Distribution</h2>
+		<p class="mt-2 text-gray-600">
+			Click and explore education data points across Pacific Island nations
+		</p>
+	</div>
 	<GeoMap
 		{optionsState}
 		{filteredData}

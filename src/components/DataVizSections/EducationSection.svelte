@@ -89,8 +89,9 @@
 	<LineChartEducation {optionsState} />
 
 	<div class="text-center">
-		<Button class="ocean-background rounded-2xl " onclick={() => (hidden = false)}
-			>Show Options</Button
+		<Button
+			class="hover; rounded-2xl bg-blue-500 hover:bg-blue-700 "
+			onclick={() => (hidden = false)}>Show Options</Button
 		>
 	</div>
 
