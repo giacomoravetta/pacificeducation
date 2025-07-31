@@ -6,11 +6,11 @@
 	import { gsap } from 'gsap';
 	import { Draggable } from 'gsap/Draggable';
 	import { InertiaPlugin } from 'gsap/InertiaPlugin';
-	import { CloseButton } from 'flowbite-svelte';
+	import { Drawer, CloseButton, Button } from 'flowbite-svelte';
 	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 
 	gsap.registerPlugin(Draggable, InertiaPlugin);
-
+	let hiddenDrawer = $state(true);
 	interface Props {
 		optionsState: {
 			selectedSkills: string[];
@@ -257,11 +257,14 @@
 	md:max-w-[80dvw]
 "
 >
-	<div class="flex items-center justify-end px-6 pt-6">
+	<div class="flex items-center justify-between px-6 pt-6">
+		<Button
+			class="bg-transparent text-white hover:bg-blue-600"
+			onclick={() => (hiddenDrawer = false)}><InfoCircleSolid /></Button
+		>
+
 		<CloseButton
 			onclick={() => {
-				console.log('clicked');
-				console.log(hidden);
 				hidden = true;
 			}}
 			class=" text-white hover:bg-blue-600"
@@ -568,6 +571,110 @@
 		</div>
 	{/if}
 </div>
+
+<Drawer
+	position="absolute"
+	class="ocean-background  top-1/2 left-1/2 h-full w-full -translate-1/2 md:max-h-[80dvh] md:max-w-[80dvw]"
+	bind:hidden={hiddenDrawer}
+	id="sidebar"
+	aria-controls="sidebar"
+	aria-labelledby="sidebar"
+>
+	<div class="overflow-hidden">
+		<div class="flex w-full justify-end">
+			<CloseButton onclick={() => (hiddenDrawer = true)} class="mb-4 text-white" />
+		</div>
+
+		<div class="relative p-8 text-white">
+			<div class="mb-8 text-center">
+				<div
+					class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 shadow-lg"
+				>
+					<svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
+						/>
+					</svg>
+				</div>
+				<h1
+					class="bg-gradient-to-r from-blue-200 via-indigo-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent"
+				>
+					How to Use Options Selector
+				</h1>
+				<p class="mt-2 text-blue-100/80">Master these simple controls to explore your data</p>
+			</div>
+
+			<!-- Instructions grid -->
+			<div class="flex w-full justify-center">
+				<div class="flex flex-col items-center justify-center gap-6 md:max-w-[40%]">
+					<div
+						class="group relative w-full overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-white/30 hover:bg-white/15"
+					>
+						<div
+							class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+						></div>
+						<div class="relative flex items-start space-x-4">
+							<div class="min-w-0 flex-1">
+								<h3 class="mb-2 text-xl font-semibold text-white">Navigate</h3>
+								<p class="leading-relaxed text-blue-100/90">
+									<span
+										class="inline-block rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-sm font-medium text-white shadow-sm"
+									>
+										Drag left and right
+									</span>
+									<span class="ml-2">to see all available options in each category.</span>
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="group relative w-full overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-white/30 hover:bg-white/15"
+					>
+						<div
+							class="absolute inset-0 bg-gradient-to-r from-green-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+						></div>
+
+						<div class="min-w-0 flex-1">
+							<h3 class="mb-2 text-xl font-semibold text-white">Select Options</h3>
+							<p class="leading-relaxed text-blue-100/90">
+								<span
+									class="inline-block rounded-full bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1 text-sm font-medium text-white shadow-sm"
+								>
+									Tap or click
+								</span>
+								<span class="ml-2">any option to select it. Selected options are highlighted.</span>
+							</p>
+						</div>
+					</div>
+
+					<div
+						class="group relative w-full overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-white/30 hover:bg-white/15"
+					>
+						<div
+							class="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+						></div>
+
+						<div class="min-w-0 flex-1">
+							<h3 class="mb-2 text-xl font-semibold text-white">Deselect Options</h3>
+							<p class="leading-relaxed text-blue-100/90">
+								<span
+									class="inline-block rounded-full bg-gradient-to-r from-red-500 to-pink-500 px-3 py-1 text-sm font-medium text-white shadow-sm"
+								>
+									Tap or click again
+								</span>
+								<span class="ml-2">on selected options to remove them.</span>
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</Drawer>
 
 <style>
 	/* Ensure grab cursor works consistently across browsers */
