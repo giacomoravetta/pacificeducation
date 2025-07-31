@@ -9,14 +9,12 @@
 	let isVideoLoaded = $state(false);
 	let isAnimationRunning = $state(false);
 
-	// Enhanced device detection
 	let isSafari = $state(false);
 	let isMobile = $state(false);
 	let isSlowDevice = $state(false);
 	let showVideo = $state(true);
 	let videoSrc = $state('');
 
-	// Performance monitoring
 	let connectionSpeed = $state('unknown');
 	let deviceMemory = $state(4);
 
@@ -69,17 +67,6 @@
 			videoSrc = '/Turtle.webm';
 		}
 
-		console.log('Device detection:', {
-			userAgent: navigator.userAgent,
-			isSafari,
-			isMobile,
-			isSlowDevice,
-			connectionSpeed,
-			deviceMemory,
-			showVideo,
-			videoSrc
-		});
-
 		return { isSafariBrowser, isMobileDevice, isDeviceSlow };
 	}
 
@@ -96,26 +83,20 @@
 	const tl = gsap.timeline();
 
 	function createArrowAnimation() {
-		console.log('Creating arrow animation...');
-
-		// Set initial state
 		gsap.set('.call-to-arrow', {
 			opacity: 0,
 			scale: 0.9,
 			y: 20
 		});
 
-		// Entrance animation
 		gsap.to('.call-to-arrow', {
 			opacity: 1,
 			scale: 1,
 			y: 0,
 			duration: 2,
-			ease: 'back.out(1.2)',
-			delay: 2 // Start after page loads
+			ease: 'back.out(1.2)'
 		});
 
-		// Continuous floating animation
 		gsap.to('.call-to-arrow', {
 			y: -12,
 			duration: 3,
@@ -125,7 +106,6 @@
 			delay: 4
 		});
 
-		// Breathing scale effect
 		gsap.to('.call-to-arrow', {
 			scale: 1.1,
 			duration: 4,
@@ -135,7 +115,6 @@
 			delay: 3
 		});
 
-		// Arrow bob animation
 		gsap.to('.call-to-arrow svg', {
 			y: -4,
 			duration: 2,
@@ -145,7 +124,6 @@
 			delay: 4.5
 		});
 
-		// Subtle rotation
 		gsap.to('.call-to-arrow svg', {
 			rotation: 3,
 			duration: 6,
@@ -165,7 +143,7 @@
 					yoyo: true,
 					repeat: 1
 				});
-				// Create expanding ring effect
+
 				gsap.fromTo(
 					'.call-to-arrow > div',
 					{
@@ -185,7 +163,6 @@
 		if (!showVideo) return false;
 
 		if (!videoBox?.width || !innerWidth || !innerHeight) {
-			console.log('Waiting for dimensions...');
 			return false;
 		}
 
@@ -230,7 +207,6 @@
 	}
 
 	function handleVideoLoad() {
-		console.log('Video loaded successfully');
 		isVideoLoaded = true;
 	}
 
@@ -255,7 +231,6 @@
 	$effect(() => {
 		if (showVideo && videoSrc) {
 			if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
-				console.log('All conditions met, starting animation');
 				startAnimation(tl);
 			}
 		} else {
@@ -264,12 +239,8 @@
 	});
 
 	onMount(() => {
-		console.log('Component mounted');
-
 		detectDevice();
 
-		// 🎯 START ARROW ANIMATION
-		// Add a small delay to ensure DOM is ready
 		setTimeout(() => {
 			createArrowAnimation();
 		}, 500);
@@ -346,35 +317,36 @@
 				</svg>
 				Interactive Data Exploration
 			</div>
-
 			<div class="mb-8">
 				<h1 class="mb-4 text-5xl leading-tight font-bold text-white lg:text-7xl">
 					<span
 						class="animate-gradient-x inline-block bg-linear-to-r from-yellow-300 via-orange-400 to-red-400 bg-clip-text text-transparent"
 					>
-						Education Across
+						Reading and Counting
 					</span>
 					<br />
 					<span
 						class="inline-block -rotate-1 transform rounded-lg bg-white/95 bg-clip-text px-4 py-2 text-transparent shadow-lg"
 					>
-						the Pacific
+						Across the Pacific
 					</span>
 				</h1>
 				<p class="text-xl font-light tracking-wide text-blue-100 lg:text-2xl">
-					Navigating Learning in Island Communities
+					Mapping Essential Skills in Island Communities
 				</p>
 			</div>
-
 			<div class="mb-12 space-y-6">
 				<p class="max-w-3xl text-lg leading-relaxed text-white/90 lg:text-xl">
-					An interactive exploration of educational systems, challenges, and opportunities across
-					the diverse island nations of the Pacific Ocean.
+					Discover how many young learners across Pacific islands are mastering the fundamental
+					skills that open doors to their future—from reading their first stories to solving their
+					first math problems
 				</p>
 			</div>
 		</div>
 	</div>
+
 	<button
+		aria-label="Button to next section"
 		onclick={() => {
 			handleClick('description');
 		}}
@@ -428,13 +400,12 @@
 		animation: gradient-x 4s ease infinite;
 	}
 
-	/* Enhanced arrow styling for better GSAP animation */
 	.call-to-arrow {
 		will-change: transform, opacity;
 	}
 
 	.call-to-arrow > div {
 		will-change: border-color, box-shadow;
-		background: transparent; /* Ensure no background */
+		background: transparent;
 	}
 </style>
