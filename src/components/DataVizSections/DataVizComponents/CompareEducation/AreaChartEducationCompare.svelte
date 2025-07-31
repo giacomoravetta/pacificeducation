@@ -11,7 +11,6 @@
 	let svgElement = $state();
 	let graphWidth = $state(0);
 
-	// Safe data filtering with null checks
 	const getFilteredData = (optionsState) => {
 		if (
 			!optionsState?.selectedIslands ||
@@ -31,18 +30,15 @@
 		);
 	};
 
-	// Derived data
 	const firstFilteredData = $derived.by(() => getFilteredData(firstOptionsState));
 	const secondFilteredData = $derived.by(() => getFilteredData(secondOptionsState));
 	const allData = $derived([...firstFilteredData, ...secondFilteredData]);
 
-	// Group and sort data by maximum values (largest first for bottom rendering)
 	const firstGroupedData = $derived.by(() => {
 		const grouped = Array.from(group(firstFilteredData, (d) => d.GEO_PICT));
 		return grouped.sort((a, b) => {
 			const maxA = Math.max(...a[1].map((d) => +d.OBS_VALUE));
 			const maxB = Math.max(...b[1].map((d) => +d.OBS_VALUE));
-			return maxB - maxA; // Descending order (largest first)
 		});
 	});
 
@@ -51,11 +47,9 @@
 		return grouped.sort((a, b) => {
 			const maxA = Math.max(...a[1].map((d) => +d.OBS_VALUE));
 			const maxB = Math.max(...b[1].map((d) => +d.OBS_VALUE));
-			return maxB - maxA; // Descending order (largest first)
 		});
 	});
 
-	// Combine and sort all areas by maximum value for proper layering
 	const allAreasData = $derived.by(() => {
 		const combined = [
 			...firstGroupedData.map(([name, data]) => ({
@@ -72,11 +66,9 @@
 			}))
 		];
 
-		// Sort by max value descending (largest areas first/bottom)
 		return combined.sort((a, b) => b.maxValue - a.maxValue);
 	});
 
-	// Enhanced description data
 	const descriptionData = $derived.by(() => {
 		const totalFirst = firstFilteredData.length;
 		const totalSecond = secondFilteredData.length;
@@ -116,12 +108,9 @@
 		};
 	});
 
-	// Chart configuration
 	const margin = { top: 40, right: 40, left: 60, bottom: 50 };
 	const graphHeight = 400;
-	const computedGraphWidth = $derived(graphWidth - margin.left - margin.right);
 
-	// Scales
 	const xScale = $derived(
 		scaleLinear()
 			.domain(extent(allData, (d) => d.TIME_PERIOD) || [2020, 2023])
@@ -134,7 +123,6 @@
 			.range([graphHeight - margin.bottom, margin.top])
 	);
 
-	// Path generators
 	const areaGenerator = $derived(
 		area()
 			.x((d) => xScale(d.TIME_PERIOD))
@@ -150,7 +138,6 @@
 			.curve(curveLinear)
 	);
 
-	// Animation actions
 	function animateArea(node, { delay = 0, opacity = 0.5 } = {}) {
 		node.style.fillOpacity = '0';
 
@@ -183,7 +170,6 @@
 		};
 	}
 
-	// Event handlers
 	const handleMouseEnter = (e, dataPoint, dataset) => {
 		if (svgElement) {
 			const rect = svgElement.getBoundingClientRect();
@@ -209,14 +195,13 @@
 				data: dataPoint,
 				dataset
 			};
-			// Keep tooltip visible for 3 seconds on mobile
+
 			setTimeout(() => {
 				selectedPoint = {};
 			}, 3000);
 		}
 	};
 
-	// Enhanced colors for datasets
 	const colors = {
 		first: {
 			fill: '#3b82f6',
@@ -237,7 +222,6 @@
 
 <div class="flex w-full max-w-5xl flex-col gap-2">
 	<div class="flex w-full flex-col justify-between gap-2 md:flex-row">
-		<!-- Dataset A Legend - FIXED -->
 		<div
 			class="w-full rounded-2xl border {colors.first
 				.border} bg-gradient-to-br from-blue-50 to-blue-100/80 p-6 shadow-lg"
@@ -331,7 +315,6 @@
 			{/if}
 		</div>
 
-		<!-- Dataset B Legend - FIXED -->
 		<div
 			class="w-full rounded-2xl border {colors.second
 				.border} bg-gradient-to-br from-emerald-50 to-emerald-100/80 p-6 shadow-lg"
@@ -438,9 +421,7 @@
 		class="flex w-full flex-col items-center justify-center space-y-8"
 		bind:clientWidth={graphWidth}
 	>
-		<!-- Enhanced Chart Container -->
 		<div class="relative w-full max-w-6xl">
-			<!-- Enhanced Tooltip -->
 			{#if selectedPoint.data}
 				<div
 					class="animate-in fade-in slide-in-from-bottom-2 pointer-events-none absolute z-20 min-w-[280px] rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-2xl backdrop-blur-sm duration-200"
@@ -521,9 +502,7 @@
 					height={graphHeight}
 					class="overflow-visible rounded-xl"
 				>
-					<!-- Grid lines -->
 					<g class="grid">
-						<!-- Vertical grid lines -->
 						{#each xScale.ticks(8).filter((tick) => Number.isInteger(tick)) as tick (tick)}
 							<line
 								x1={xScale(tick)}
@@ -537,7 +516,6 @@
 							/>
 						{/each}
 
-						<!-- Horizontal grid lines -->
 						{#each yScale.ticks(5) as tick (tick)}
 							<line
 								x1={margin.left}
@@ -552,7 +530,6 @@
 						{/each}
 					</g>
 
-					<!-- Render all areas sorted by size (largest first/bottom) -->
 					{#each allAreasData as areaItem, i (`${areaItem.dataset}-${areaItem.name}`)}
 						{@const isFirstDataset = areaItem.dataset === 'first'}
 						{@const color = isFirstDataset ? colors.first : colors.second}
@@ -560,7 +537,6 @@
 						{@const baseDelay = isFirstDataset ? 0 : 800}
 
 						<g class="dataset-group {areaItem.dataset}-dataset" data-island={areaItem.name}>
-							<!-- Area fill -->
 							<path
 								class="area-path"
 								d={areaGenerator(areaItem.data)}
@@ -574,7 +550,6 @@
 								}}
 							/>
 
-							<!-- Border line -->
 							<path
 								class="line-path"
 								d={lineGenerator(areaItem.data)}
@@ -587,7 +562,6 @@
 						</g>
 					{/each}
 
-					<!-- Render data points separately on top -->
 					{#each allAreasData as areaItem, i (`points-${areaItem.dataset}-${areaItem.name}`)}
 						{@const isFirstDataset = areaItem.dataset === 'first'}
 						{@const color = isFirstDataset ? colors.first : colors.second}
@@ -612,7 +586,6 @@
 						</g>
 					{/each}
 
-					<!-- X Axis -->
 					<g class="x-axis" transform="translate(0, {graphHeight - margin.bottom})">
 						{#each xScale.ticks(8).filter((tick) => Number.isInteger(tick)) as tick (tick)}
 							<text
@@ -628,7 +601,6 @@
 						{/each}
 					</g>
 
-					<!-- Y Axis -->
 					<g class="y-axis" transform="translate({margin.left}, 0)">
 						{#each yScale.ticks(5) as tick (tick)}
 							<text

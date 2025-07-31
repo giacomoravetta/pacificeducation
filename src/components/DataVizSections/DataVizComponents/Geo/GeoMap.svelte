@@ -7,16 +7,15 @@
 
 	let hidden = $state(true);
 	let hiddenTime = $state(true);
-	// Svelte 5 reactive state using runes
+
 	let mapContainer = $state();
-	let selectedYear = $state(null); // Start with null, will be set when data is available
+	let selectedYear = $state(null);
 	let currentHover = $state(null);
 	let isInitializing = $state(true);
 	let isPlaying = $state(false);
 	let playInterval = $state(null);
 	let filtersReady = $state(false);
 
-	// Private variables (non-reactive)
 	let leafletMap;
 	let leafletLib;
 	let d3Overlay;
@@ -30,9 +29,7 @@
 		console.log('Options state:', $state.snapshot(optionsState));
 	});
 
-	// Check if all required filters are set
 	$effect(() => {
-		// Fix: Check for arrays instead of objects with boolean properties
 		const hasValidSex = optionsState?.selectedSexes && optionsState.selectedSexes.length > 0;
 		const hasValidEducation =
 			optionsState?.selectedEducation && optionsState.selectedEducation.length > 0;
@@ -64,15 +61,13 @@
 		filtersReady = newFiltersReady;
 	});
 
-	// Set initial year when data becomes available
 	$effect(() => {
 		if (filtersReady && availableYears.length > 0 && selectedYear === null) {
-			selectedYear = availableYears[0]; // Set to first available year
+			selectedYear = availableYears[0];
 			console.log('Setting initial year to:', availableYears[0]);
 		}
 	});
 
-	// Get available years from filteredData
 	const availableYears = $derived.by(() => {
 		const years = new Set();
 		filteredData.forEach((row) => {
@@ -83,19 +78,14 @@
 		return yearArray;
 	});
 
-	// Generate Pacific Islands data from filteredData instead of appData
 	const pacificIslands = $derived.by(() => {
 		const islands = [];
 
-		// Get all island names from coordinatesIslands (this should be the master list)
 		for (const [islandName, coords] of Object.entries(optionsState.coordinatesIslands)) {
-			// Find education rates for this island from filteredData
 			const rates = {};
 
-			// Look through filteredData to find rates for this island
 			const islandData = filteredData.filter((row) => row.GEO_PICT === islandName);
 
-			// Extract OBS_VALUE by TIME_PERIOD - this is the key fix
 			islandData.forEach((row) => {
 				if (
 					row.TIME_PERIOD &&
@@ -103,11 +93,10 @@
 					row.OBS_VALUE !== undefined &&
 					row.OBS_VALUE > 0
 				) {
-					rates[row.TIME_PERIOD] = row.OBS_VALUE; // Using OBS_VALUE directly
+					rates[row.TIME_PERIOD] = row.OBS_VALUE;
 				}
 			});
 
-			// Only include islands that have data
 			if (Object.keys(rates).length > 0) {
 				islands.push({
 					name: islandName,
@@ -129,7 +118,6 @@
 		return islands;
 	});
 
-	// Normalize coordinates for Pacific-centered view
 	const normalizedIslands = $derived(
 		pacificIslands.map((island) => ({
 			...island,
@@ -142,7 +130,7 @@
 
 	function getPacificCenter() {
 		if (normalizedIslands.length === 0) {
-			return [-15, 180]; // Default Pacific center
+			return [-15, 180];
 		}
 
 		const avgLat =
@@ -166,7 +154,6 @@
 		return island.rates[year] ? { year: Number(year), rate: island.rates[year] } : null;
 	}
 
-	// Time control functions
 	function playAnimation() {
 		if (availableYears.length === 0 || !filtersReady) return;
 
@@ -177,7 +164,7 @@
 		playInterval = setInterval(() => {
 			currentIndex = (currentIndex + 1) % availableYears.length;
 			selectedYear = availableYears[currentIndex];
-		}, 1500); // Change every 1.5 seconds
+		}, 1500);
 	}
 
 	function stopAnimation() {
@@ -199,7 +186,6 @@
 		return [island.lat, island.lng];
 	}
 
-	// Close mobile tooltip function
 	function closeMobileTooltip() {
 		const mobileTooltip = d3.select('.mobile-column-tooltip');
 
@@ -210,34 +196,27 @@
 				.style('opacity', '0')
 				.on('end', function () {
 					mobileTooltip.remove();
-					// Restore body scroll
+
 					document.body.style.overflow = '';
-					// Remove escape key listener
+
 					d3.select(window).on('keydown.mobile-tooltip', null);
 				});
 		}
 	}
 
-	// Enhanced mobile-responsive tooltip system for column interactions
 	function createMobileResponsiveTooltip(island, data, event) {
-		// Check if we're on mobile
 		const isMobile = window.innerWidth < 768;
 
 		if (isMobile) {
-			// Create mobile modal tooltip
 			createMobileModalTooltip(island, data);
 		} else {
-			// Create desktop hover tooltip
 			createDesktopTooltip(island, data, event);
 		}
 	}
 
-	// Mobile modal tooltip (centered, full overlay)
 	function createMobileModalTooltip(island, data) {
-		// Remove any existing mobile tooltips
 		d3.select('.mobile-column-tooltip').remove();
 
-		// Create overlay backdrop
 		const mobileTooltip = d3
 			.select('body')
 			.append('div')
@@ -257,13 +236,11 @@
 			.style('opacity', '0')
 			.style('cursor', 'pointer')
 			.on('click', function (event) {
-				// Close when clicking outside the modal content
 				if (event.target === this) {
 					closeMobileTooltip();
 				}
 			});
 
-		// Create modal content
 		const modalContent = mobileTooltip
 			.append('div')
 			.style(
@@ -282,11 +259,9 @@
 			.style('transform', 'scale(0.8)')
 			.style('transition', 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)')
 			.on('click', function (event) {
-				// Prevent closing when clicking inside modal
 				event.stopPropagation();
 			});
 
-		// Performance indicators
 		const performance =
 			data.rate > 70
 				? { icon: '🔥', label: 'High Performance', color: '#10b981' }
@@ -297,9 +272,8 @@
 		const trend = getTrendInfo(island, data.year);
 		const rankPosition = getRankPosition(data.rate);
 
-		// Create detailed mobile content
 		const content = `
-			<!-- Close button -->
+
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 				<div style="display: flex; align-items: center; gap: 12px;">
 					<div style="width: 16px; height: 16px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%; flex-shrink: 0;"></div>
@@ -313,14 +287,14 @@
 				</button>
 			</div>
 
-			<!-- Main metric -->
+
 			<div style="text-align: center; padding: 24px; background: rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 20px; border: 2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'};">
 				<div style="font-size: 48px; font-weight: 900; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; line-height: 1; margin-bottom: 8px;">${data.rate}%</div>
 				<div style="font-size: 16px; opacity: 0.9; font-weight: 600;">Literacy/Numeracy Rate</div>
 				<div style="font-size: 14px; opacity: 0.7; margin-top: 4px;">Year ${data.year}</div>
 			</div>
 
-			<!-- Stats grid -->
+
 			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
 				<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; text-align: center;">
 					<div style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Regional Rank</div>
@@ -334,16 +308,16 @@
 				</div>
 			</div>
 
-			<!-- Performance description -->
+
 			<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
 				<div style="font-weight: 600; margin-bottom: 8px; font-size: 16px;">${performance.icon} ${performance.label}</div>
 				<div style="font-size: 14px; opacity: 0.9; line-height: 1.5;">${getPerformanceDescription(data.rate)}</div>
 			</div>
 
-			<!-- Trend information -->
+
 			${trend}
 
-			<!-- Tap anywhere to close hint -->
+
 			<div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
 				<div style="font-size: 12px; opacity: 0.6;">Tap outside to close</div>
 			</div>
@@ -351,10 +325,8 @@
 
 		modalContent.html(content);
 
-		// Add close button functionality
 		modalContent.select('.close-mobile-tooltip').on('click', closeMobileTooltip);
 
-		// Animate in
 		mobileTooltip.transition().duration(300).ease(d3.easeBackOut).style('opacity', '1');
 
 		modalContent
@@ -364,20 +336,16 @@
 			.ease(d3.easeBackOut)
 			.style('transform', 'scale(1)');
 
-		// Add escape key listener
 		d3.select(window).on('keydown.mobile-tooltip', function (event) {
 			if (event.key === 'Escape') {
 				closeMobileTooltip();
 			}
 		});
 
-		// Prevent body scroll
 		document.body.style.overflow = 'hidden';
 	}
 
-	// Desktop hover tooltip (original behavior)
 	function createDesktopTooltip(island, data, event) {
-		// Remove any existing tooltips
 		d3.select('.column-tooltip').remove();
 
 		const columnTooltip = d3
@@ -444,26 +412,22 @@
 			.duration(300)
 			.style('opacity', 1);
 
-		// Auto-position to keep tooltip in viewport
 		setTimeout(() => {
 			const tooltip = columnTooltip.node();
 			const rect = tooltip.getBoundingClientRect();
 			const viewportWidth = window.innerWidth;
 			const viewportHeight = window.innerHeight;
 
-			// Adjust horizontal position
 			if (rect.right > viewportWidth - 10) {
 				columnTooltip.style('left', event.pageX - rect.width - 15 + 'px');
 			}
 
-			// Adjust vertical position
 			if (rect.bottom > viewportHeight - 10) {
 				columnTooltip.style('top', event.pageY - rect.height - 10 + 'px');
 			}
 		}, 10);
 	}
 
-	// Helper functions for enhanced tooltips
 	function getRankPosition(rate) {
 		const sortedRates = normalizedIslands
 			.map((island) => getYearData(island, selectedYear))
@@ -512,11 +476,8 @@
 		</div>`;
 	}
 
-	// Enhanced animated column visualization with better scaling
 	function createAnimatedColumns(group, island, data, hasData) {
-		// Only show columns if filters are ready
 		if (!filtersReady) {
-			// Hide all columns when filters not ready
 			const columnGroup = group.select('.column-system');
 			if (!columnGroup.empty()) {
 				columnGroup.selectAll('*').transition().duration(300).style('opacity', 0);
@@ -527,7 +488,6 @@
 		const baseRadius = hasData ? Math.max(6, Math.sqrt(data.rate) * 0.5) : 5;
 		const intensity = hasData ? data.rate / 100 : 0;
 
-		// Main island circle - use color from optionsState
 		group
 			.select('.main-circle')
 			.transition()
@@ -542,12 +502,10 @@
 		}
 
 		if (hasData) {
-			// Column dimensions - better scaling for the data range
 			const columnWidth = 3 + intensity * 4;
-			const maxColumnHeight = 20 + intensity * 40; // Increased range for better visibility
-			const columnHeight = Math.max(5, intensity * maxColumnHeight); // Minimum height
+			const maxColumnHeight = 20 + intensity * 40;
+			const columnHeight = Math.max(5, intensity * maxColumnHeight);
 
-			// Create main column with gradient
 			let column = columnGroup.select('.data-column');
 			if (column.empty()) {
 				column = columnGroup
@@ -562,7 +520,6 @@
 					.style('stroke', 'white')
 					.style('stroke-width', 1);
 
-				// Create gradient definition
 				const defs = d3.select('svg').select('defs').empty()
 					? d3.select('svg').append('defs')
 					: d3.select('svg').select('defs');
@@ -589,7 +546,6 @@
 					.style('stop-opacity', 1);
 			}
 
-			// Update column dimensions and animate
 			column
 				.attr('x', -columnWidth / 2)
 				.attr('width', columnWidth)
@@ -600,7 +556,6 @@
 				.attr('height', columnHeight)
 				.attr('y', -columnHeight);
 
-			// Create invisible hover area for better interaction
 			let hoverArea = columnGroup.select('.column-hover-area');
 			if (hoverArea.empty()) {
 				hoverArea = columnGroup
@@ -610,33 +565,27 @@
 					.style('cursor', 'pointer');
 			}
 
-			// Update hover area to cover the column
 			hoverArea
 				.attr('x', -Math.max(columnWidth / 2 + 2, 8))
 				.attr('y', -columnHeight - 5)
 				.attr('width', Math.max(columnWidth + 4, 16))
 				.attr('height', columnHeight + 10);
 
-			// Add mobile-responsive hover handlers
 			hoverArea
 				.on('mouseenter touchstart', function (event) {
 					event.preventDefault();
 
-					// Highlight the column
 					column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
 
-					// Create responsive tooltip
 					createMobileResponsiveTooltip(island, data, event);
 				})
 				.on('mouseleave', function () {
-					// Only remove highlight and tooltip on desktop
 					if (window.innerWidth >= 768) {
 						column.style('stroke-width', 1).style('filter', 'none');
 						d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
 					}
 				})
 				.on('mousemove', function (event) {
-					// Update desktop tooltip position
 					if (window.innerWidth >= 768) {
 						d3.select('.column-tooltip')
 							.style('left', event.pageX + 15 + 'px')
@@ -644,7 +593,6 @@
 					}
 				});
 
-			// Shadow effect
 			let shadow = columnGroup.select('.column-shadow');
 			if (shadow.empty()) {
 				shadow = columnGroup
@@ -664,8 +612,7 @@
 				.attr('cy', 8)
 				.style('opacity', 0.3);
 
-			// Enhanced glow for high performers
-			columnGroup.select('.column-glow').remove(); // Remove old glow
+			columnGroup.select('.column-glow').remove();
 			if (data.rate > 70) {
 				const glow = columnGroup
 					.append('rect')
@@ -699,7 +646,6 @@
 				setTimeout(pulseGlow, 800);
 			}
 		} else {
-			// Hide columns when no data
 			columnGroup
 				.selectAll('.data-column')
 				.transition()
@@ -751,7 +697,6 @@
 			isInitializing = true;
 			leafletLib = await import('leaflet');
 
-			// Fix marker icons
 			delete leafletLib.Icon.Default.prototype._getIconUrl;
 			leafletLib.Icon.Default.mergeOptions({
 				iconRetinaUrl:
@@ -770,7 +715,7 @@
 				worldCopyJump: false,
 				maxBounds: null,
 				crs: leafletLib.CRS.EPSG3857,
-				zoomControl: false // Disable default zoom controls
+				zoomControl: false
 			});
 
 			leafletLib
@@ -817,7 +762,6 @@
 
 			g.attr('transform', `translate(${-topLeft.x},${-topLeft.y})`);
 
-			// Always try to render islands if we have data and filters are ready
 			if (!islandsRendered && filtersReady && normalizedIslands.length > 0) {
 				console.log('Calling renderIslands from updateD3Overlay');
 				renderIslands();
@@ -838,7 +782,6 @@
 
 		console.log('Rendering', normalizedIslands.length, 'islands');
 
-		// Create island groups
 		const islandGroups = d3Overlay
 			.selectAll('.island-group')
 			.data(normalizedIslands)
@@ -856,14 +799,12 @@
 				return `translate(${point.x},${point.y})`;
 			});
 
-		// Add elements to each group
 		islandGroups.each(function (island) {
 			const group = d3.select(this);
 			const data = getYearData(island, selectedYear);
 			const hasData = data && data.rate > 0;
 			const radius = hasData ? Math.max(8, Math.sqrt(data.rate) * 0.6) : 6;
 
-			// Main circle - use optionsState colors
 			group
 				.append('circle')
 				.attr('class', 'main-circle')
@@ -873,14 +814,12 @@
 				.style('stroke-width', 2)
 				.style('cursor', 'pointer');
 
-			// Enhanced event handlers for island circle - mobile responsive
 			group
 				.on('mouseenter touchstart', function (event) {
 					event.preventDefault();
 					currentHover = island.name;
 					const currentData = getYearData(island, selectedYear);
 
-					// Highlight the column if it exists
 					const columnGroup = group.select('.column-system');
 					const column = columnGroup.select('.data-column');
 					if (!column.empty()) {
@@ -888,29 +827,24 @@
 					}
 
 					if (currentData && currentData.rate > 0) {
-						// Create mobile-responsive tooltip
 						createMobileResponsiveTooltip(island, currentData, event);
 					}
 				})
 				.on('mouseleave', function () {
-					// Only remove highlight and tooltip on desktop
 					if (window.innerWidth >= 768) {
 						currentHover = null;
 
-						// Remove column highlight
 						const columnGroup = group.select('.column-system');
 						const column = columnGroup.select('.data-column');
 						if (!column.empty()) {
 							column.style('stroke-width', 1).style('filter', 'none');
 						}
 
-						// Remove desktop tooltip
 						d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
 					}
 				})
 				.on('mousemove', function (event) {
 					if (currentHover && window.innerWidth >= 768) {
-						// Update desktop tooltip position
 						d3.select('.column-tooltip')
 							.style('left', event.pageX + 15 + 'px')
 							.style('top', event.pageY - 10 + 'px');
@@ -930,42 +864,36 @@
 		if (d3Overlay) {
 			d3Overlay.selectAll('*').remove();
 		}
-		// Clean up all tooltips
+
 		d3.select('body').selectAll('.map-tooltip').remove();
 		d3.select('body').selectAll('.column-tooltip').remove();
 		d3.select('body').selectAll('.mobile-column-tooltip').remove();
 
-		// Remove any lingering event listeners
 		d3.select(window).on('keydown.mobile-tooltip', null);
 
-		// Restore body scroll if it was disabled
 		document.body.style.overflow = '';
 	}
 
-	// Effects using Svelte 5 runes
 	$effect(() => {
 		if (filteredData) {
 			console.log('Filtered data changed, length:', filteredData.length);
 			console.log('Islands rendered:', islandsRendered);
 			console.log('Filters ready:', filtersReady);
 
-			// Only re-render if we have rendered islands before
 			if (islandsRendered) {
 				console.log('Re-rendering islands due to data change');
 				stopAnimation();
-				// Reset year to null so it gets set to first available year
+
 				selectedYear = null;
-				// Clear current islands and re-render with new data
+
 				if (d3Overlay) {
 					d3Overlay.selectAll('.island-group').remove();
 					islandsRendered = false;
-					// The map update cycle will handle re-rendering
 				}
 			}
 		}
 	});
 
-	// Add a specific effect to trigger initial rendering when filters become ready
 	$effect(() => {
 		console.log('Filter readiness effect:', {
 			filtersReady,
@@ -1008,26 +936,18 @@
 	});
 </script>
 
-<!-- Map -->
 <div class="relative overflow-hidden rounded-xl border border-white/20 shadow-xl">
 	<div class="aspect-square">
 		<div class="pointer-events-none absolute z-10 h-full w-full">
-			<!-- Time Controls - Mobile Responsive -->
 			{#if !isInitializing && availableYears.length > 0 && filtersReady && selectedYear !== null}
-				<!-- Mobile: Fullscreen overlay with centered modal -->
-				<!-- Desktop: Positioned left corner with fixed width -->
 				<div
 					class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm sm:absolute sm:inset-auto sm:right-auto sm:bottom-[2%] sm:left-[2%] sm:max-w-[300px] sm:bg-transparent sm:p-0 sm:backdrop-blur-none lg:max-w-sm xl:max-w-md"
-					onclick={handleOutsideClick()}
 					class:hidden={hiddenTime}
 				>
-					<!-- Modal container -->
 					<div
 						class="hover:shadow-3xl w-full max-w-sm rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300 sm:max-w-none sm:rounded-xl"
 					>
-						<!-- Main Container -->
 						<div class="pointer-events-auto p-4 sm:p-5">
-							<!-- Header Section -->
 							<div class="mb-4 flex items-center justify-between sm:mb-3">
 								<div class="flex items-center gap-3">
 									<div
@@ -1057,7 +977,6 @@
 									</div>
 								</div>
 
-								<!-- Year Counter (Hidden on mobile, shown on larger screens) -->
 								<div class="hidden text-right sm:block">
 									<span class="block text-xs text-slate-400">Timeline</span>
 									<span class="block text-sm font-semibold text-slate-600">
@@ -1065,7 +984,6 @@
 									</span>
 								</div>
 
-								<!-- Close button (mobile only) -->
 								<button
 									class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
 									onclick={() => (hiddenTime = true)}
@@ -1082,7 +1000,6 @@
 								</button>
 							</div>
 
-							<!-- Progress Indicator (Mobile-friendly) -->
 							<div class="mb-4 sm:mb-3">
 								<div class="mb-2 flex items-center justify-between">
 									<span class="text-xs font-medium text-slate-600">Progress</span>
@@ -1104,10 +1021,8 @@
 								</div>
 							</div>
 
-							<!-- Range Slider -->
 							<div class="mb-4 sm:mb-3">
 								<div class="relative">
-									<!-- Enhanced mobile-friendly slider -->
 									<input
 										type="range"
 										min="0"
@@ -1120,7 +1035,6 @@
 										class="range-slider h-3 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
 									/>
 
-									<!-- Year range labels -->
 									<div class="mt-2 flex justify-between text-xs font-medium text-slate-500">
 										<span class="rounded bg-slate-100 px-2 py-1">
 											{availableYears[0]}
@@ -1132,11 +1046,8 @@
 								</div>
 							</div>
 
-							<!-- Control Buttons -->
 							<div class="space-y-3 sm:space-y-2">
-								<!-- Primary Controls Row -->
 								<div class="flex gap-2">
-									<!-- Play/Pause Button (Larger on mobile) -->
 									{#if !isPlaying}
 										<button
 											onclick={playAnimation}
@@ -1160,7 +1071,6 @@
 										</button>
 									{/if}
 
-									<!-- Reset Button -->
 									<button
 										onclick={resetToFirstYear}
 										title="Reset to first year"
@@ -1178,7 +1088,6 @@
 									</button>
 								</div>
 
-								<!-- Secondary Controls Row (Mobile) -->
 								<div class="flex items-center justify-between rounded-lg bg-slate-50 p-3 sm:hidden">
 									<div class="flex items-center gap-2">
 										<svg
@@ -1206,7 +1115,6 @@
 									</div>
 								</div>
 
-								<!-- Desktop Info Row -->
 								<div class="hidden items-center justify-between text-xs text-slate-500 sm:flex">
 									<span>{availableYears.length} years available</span>
 									{#if isPlaying}
@@ -1219,7 +1127,6 @@
 							</div>
 						</div>
 
-						<!-- Mobile-only bottom indicator when playing -->
 						{#if isPlaying}
 							<div class="border-t border-white/20 bg-green-50 p-3">
 								<div class="flex items-center justify-center gap-2">
@@ -1232,7 +1139,6 @@
 					</div>
 				</div>
 
-				<!-- Show Time Controls Button (Mobile only) -->
 				<button
 					class="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700"
 					class:hidden={!hiddenTime}
@@ -1251,10 +1157,9 @@
 				</button>
 			{/if}
 
-			<!-- Filters not ready warning -->
 			{#if !filtersReady && !isInitializing}
 				<div
-					class="- absolute top-1/2 left-1/2 -translate-x-1/2 rounded-lg border border-amber-300 bg-amber-100/95 p-4 shadow-lg backdrop-blur-sm"
+					class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-amber-300 bg-amber-100/95 p-4 shadow-lg backdrop-blur-sm"
 				>
 					<div class="flex items-center gap-2">
 						<span class="text-xl">⚠️</span>
@@ -1308,153 +1213,7 @@
 
 <style>
 	@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-	/* Enhanced mobile-friendly range slider */
-	.time-slider::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		height: 28px;
-		width: 28px;
-		border-radius: 50%;
-		background: #3b82f6;
-		border: 3px solid white;
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	}
 
-	.time-slider::-webkit-slider-thumb:hover {
-		background: #2563eb;
-		transform: scale(1.1);
-		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-	}
-
-	.time-slider::-webkit-slider-thumb:active {
-		transform: scale(1.2);
-		box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-	}
-
-	.time-slider::-moz-range-thumb {
-		height: 28px;
-		width: 28px;
-		border-radius: 50%;
-		background: #3b82f6;
-		border: 3px solid white;
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-		cursor: pointer;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		border: none;
-	}
-
-	.time-slider::-moz-range-thumb:hover {
-		background: #2563eb;
-		transform: scale(1.1);
-		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-	}
-
-	.time-slider::-moz-range-thumb:active {
-		transform: scale(1.2);
-		box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-	}
-
-	/* Desktop slider adjustments */
-	@media (min-width: 640px) {
-		.time-slider::-webkit-slider-thumb {
-			height: 20px;
-			width: 20px;
-		}
-
-		.time-slider::-moz-range-thumb {
-			height: 20px;
-			width: 20px;
-		}
-	}
-
-	/* Dark mode support */
-	@media (prefers-color-scheme: dark) {
-		.time-slider {
-			background: linear-gradient(to right, #1e40af, #1d4ed8);
-		}
-	}
-
-	/* Reduced motion support */
-	@media (prefers-reduced-motion: reduce) {
-		.time-slider::-webkit-slider-thumb,
-		.time-slider::-moz-range-thumb {
-			transition: none;
-		}
-
-		* {
-			animation-duration: 0.01ms !important;
-			animation-iteration-count: 1 !important;
-			transition-duration: 0.01ms !important;
-		}
-	}
-
-	/* High contrast mode */
-	@media (prefers-contrast: high) {
-		.time-slider::-webkit-slider-thumb {
-			border: 4px solid black;
-		}
-
-		.time-slider::-moz-range-thumb {
-			border: 4px solid black;
-		}
-	}
-
-	/* Focus styles for accessibility */
-	.time-slider:focus {
-		outline: none;
-		box-shadow: 0 0 0 2px #3b82f6;
-	}
-
-	/* Touch-friendly hover states */
-	@media (hover: hover) {
-		button:hover {
-			transform: translateY(-1px);
-		}
-	}
-
-	:global(.leaflet-container) {
-		font-family: 'Inter', system-ui, sans-serif;
-		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
-	}
-
-	:global(.leaflet-control-zoom) {
-		border: none !important;
-		border-radius: 12px !important;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-		background: rgba(255, 255, 255, 0.95) !important;
-		backdrop-filter: blur(10px);
-		overflow: hidden;
-	}
-
-	:global(.leaflet-control-zoom a) {
-		border: none !important;
-		color: #475569 !important;
-		font-weight: 600 !important;
-		font-size: 16px !important;
-		width: 36px !important;
-		height: 36px !important;
-		line-height: 36px !important;
-		transition: all 0.2s ease !important;
-		background: rgba(255, 255, 255, 0.9) !important;
-	}
-
-	:global(.leaflet-control-zoom a:hover) {
-		background: rgba(59, 130, 246, 0.1) !important;
-		color: #3b82f6 !important;
-		transform: scale(1.05);
-	}
-
-	:global(.island-group) {
-		transition: all 0.3s ease;
-	}
-
-	:global(.island-group:hover) {
-		filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
-	}
-
-	/* Enhanced mobile-friendly range slider */
 	.range-slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
@@ -1502,7 +1261,6 @@
 		box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
 	}
 
-	/* Mobile-specific touch targets */
 	@media (max-width: 640px) {
 		.range-slider::-webkit-slider-thumb {
 			height: 28px;
@@ -1515,14 +1273,12 @@
 		}
 	}
 
-	/* Dark mode support */
 	@media (prefers-color-scheme: dark) {
 		.range-slider {
 			background: linear-gradient(to right, #1e40af, #1d4ed8);
 		}
 	}
 
-	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
 		* {
 			animation-duration: 0.01ms !important;
@@ -1531,7 +1287,6 @@
 		}
 	}
 
-	/* High contrast mode */
 	@media (prefers-contrast: high) {
 		.range-slider::-webkit-slider-thumb {
 			border: 4px solid black;
@@ -1540,6 +1295,51 @@
 		.range-slider::-moz-range-thumb {
 			border: 4px solid black;
 		}
+	}
+
+	:global(.leaflet-container) {
+		font-family: 'Inter', system-ui, sans-serif;
+		background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
+	}
+
+	:global(.leaflet-control-zoom) {
+		border: none !important;
+		border-radius: 12px !important;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+		background: rgba(255, 255, 255, 0.95) !important;
+		backdrop-filter: blur(10px);
+		overflow: hidden;
+	}
+
+	:global(.leaflet-control-zoom a) {
+		border: none !important;
+		color: #475569 !important;
+		font-weight: 600 !important;
+		font-size: 16px !important;
+		width: 36px !important;
+		height: 36px !important;
+		line-height: 36px !important;
+		transition: all 0.2s ease !important;
+		background: rgba(255, 255, 255, 0.9) !important;
+	}
+
+	:global(.leaflet-control-zoom a:hover) {
+		background: rgba(59, 130, 246, 0.1) !important;
+		color: #3b82f6 !important;
+		transform: scale(1.05);
+	}
+
+	:global(.island-group) {
+		transition: all 0.3s ease;
+	}
+
+	:global(.island-group:hover) {
+		filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+	}
+
+	:global(*:focus) {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
 	}
 
 	:global(::-webkit-scrollbar) {
@@ -1558,20 +1358,5 @@
 
 	:global(::-webkit-scrollbar-thumb:hover) {
 		background: rgba(148, 163, 184, 0.9);
-	}
-
-	:global(*:focus) {
-		outline: 2px solid #3b82f6;
-		outline-offset: 2px;
-	}
-
-	@media (max-width: 768px) {
-		.grid-cols-1 {
-			grid-template-columns: 1fr;
-		}
-
-		.lg\\:flex-row {
-			flex-direction: column;
-		}
 	}
 </style>

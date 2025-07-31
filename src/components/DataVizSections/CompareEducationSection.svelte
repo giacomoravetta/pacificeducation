@@ -2,8 +2,7 @@
 	import { appData } from '../../state.svelte';
 	import OptionsSelector from '$lib/OptionsSelector.svelte';
 	import AreaChartEducationCompare from './DataVizComponents/CompareEducation/AreaChartEducationCompare.svelte';
-	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
-	import { InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { Drawer, Button } from 'flowbite-svelte';
 
 	let hiddenFirst = $state(true);
 	let hiddenSecond = $state(true);
@@ -15,24 +14,7 @@
 		selectedEducation: [],
 		selectedSkills: [],
 		selectedIslands: [],
-		colorsIslands: {
-			'French Polynesia': '#0891B2', // Deep Ocean Blue
-			Niue: '#0D9488', // Teal
-			'New Caledonia': '#059669', // Emerald
-			Tonga: '#DC2626', // Coral Red
-			'Marshall Islands': '#7C3AED', // Deep Purple
-			Vanuatu: '#EA580C', // Sunset Orange
-			Nauru: '#CA8A04', // Golden Sand
-			Samoa: '#BE185D', // Tropical Pink
-			Fiji: '#1D4ED8', // Royal Blue
-			'Papua New Guinea': '#16A34A', // Forest Green
-			Palau: '#0EA5E9', // Sky Blue
-			Micronesia: '#8B5CF6', // Lavender
-			Kiribati: '#F59E0B', // Amber
-			'Solomon Islands': '#65A30D', // Lime Green
-			'Cook Islands': '#EC4899', // Rose Pink
-			Tuvalu: '#06B6D4' // Cyan
-		}
+		colorsIslands: {}
 	});
 
 	let secondOptionsState = $state({
@@ -40,42 +22,19 @@
 		selectedEducation: [],
 		selectedSkills: [],
 		selectedIslands: [],
-		colorsIslands: {
-			'French Polynesia': '#0891B2', // Deep Ocean Blue
-			Niue: '#0D9488', // Teal
-			'New Caledonia': '#059669', // Emerald
-			Tonga: '#DC2626', // Coral Red
-			'Marshall Islands': '#7C3AED', // Deep Purple
-			Vanuatu: '#EA580C', // Sunset Orange
-			Nauru: '#CA8A04', // Golden Sand
-			Samoa: '#BE185D', // Tropical Pink
-			Fiji: '#1D4ED8', // Royal Blue
-			'Papua New Guinea': '#16A34A', // Forest Green
-			Palau: '#0EA5E9', // Sky Blue
-			Micronesia: '#8B5CF6', // Lavender
-			Kiribati: '#F59E0B', // Amber
-			'Solomon Islands': '#65A30D', // Lime Green
-			'Cook Islands': '#EC4899', // Rose Pink
-			Tuvalu: '#06B6D4' // Cyan
-		}
+		colorsIslands: {}
 	});
 
 	const skills = [...new Set(appData.skills.map((skill) => skill['COMPOSITE_BREAKDOWN']))];
 	const educationTypes = [...new Set(appData.skills.map((skill) => skill['EDUCATION']))];
 	const sexes = [...new Set(appData.skills.map((skill) => skill['SEX']))];
 
-	// Combined filtered data for determining available islands
 	const combinedFilteredData = $derived.by(() => {
-		return appData.skills.filter((d) => {
-			// You can adjust this logic based on whether you want islands to be filtered
-			// by either dataset's selections or show all available islands
-			return true; // For now, show all islands as options
-		});
+		return appData.skills.filter((d) => {});
 	});
 
 	const islands = $derived([...new Set(combinedFilteredData.map((d) => d['GEO_PICT']))]);
 
-	// Computed stats for both datasets
 	const firstDatasetStats = $derived.by(() => {
 		if (!firstOptionsState.selectedIslands.length || !firstOptionsState.selectedSkills.length) {
 			return { count: 0, avgValue: 0, islands: 0 };
@@ -130,7 +89,6 @@
 		};
 	});
 
-	// FIRST OPTIONS STATE HANDLERS
 	const handleFirstSkillToggle = (skill: string) => {
 		const isSelected = firstOptionsState.selectedSkills.includes(skill);
 
@@ -142,7 +100,6 @@
 			firstOptionsState.selectedSkills = [...firstOptionsState.selectedSkills, skill];
 		}
 
-		// Clear islands when skills change
 		firstOptionsState.selectedIslands = [];
 	};
 
@@ -157,7 +114,6 @@
 			firstOptionsState.selectedEducation = [...firstOptionsState.selectedEducation, education];
 		}
 
-		// Clear islands when education changes
 		firstOptionsState.selectedIslands = [];
 	};
 
@@ -170,7 +126,6 @@
 			firstOptionsState.selectedSexes = [...firstOptionsState.selectedSexes, sex];
 		}
 
-		// Clear islands when sex changes
 		firstOptionsState.selectedIslands = [];
 	};
 
@@ -186,7 +141,6 @@
 		}
 	};
 
-	// SECOND OPTIONS STATE HANDLERS
 	const handleSecondSkillToggle = (skill: string) => {
 		const isSelected = secondOptionsState.selectedSkills.includes(skill);
 
@@ -198,7 +152,6 @@
 			secondOptionsState.selectedSkills = [...secondOptionsState.selectedSkills, skill];
 		}
 
-		// Clear islands when skills change
 		secondOptionsState.selectedIslands = [];
 	};
 
@@ -213,7 +166,6 @@
 			secondOptionsState.selectedEducation = [...secondOptionsState.selectedEducation, education];
 		}
 
-		// Clear islands when education changes
 		secondOptionsState.selectedIslands = [];
 	};
 
@@ -226,7 +178,6 @@
 			secondOptionsState.selectedSexes = [...secondOptionsState.selectedSexes, sex];
 		}
 
-		// Clear islands when sex changes
 		secondOptionsState.selectedIslands = [];
 	};
 
@@ -246,7 +197,6 @@
 <svelte:window bind:innerWidth />
 
 <section class="flex w-full flex-col items-center justify-center gap-8 p-6">
-	<!-- Enhanced Header Section -->
 	<div class="w-full max-w-6xl text-center">
 		<div
 			class="mb-6 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-cyan-50 to-blue-50 px-6 py-3 text-sm font-medium text-cyan-700 ring-1 ring-cyan-200/50"
@@ -269,17 +219,13 @@
 		</p>
 	</div>
 
-	<!-- Dataset Comparison Overview -->
 	<div class="flex w-full max-w-6xl flex-col gap-2">
-		<!-- Chart Component -->
 		<div class="w-full max-w-7xl">
 			<AreaChartEducationCompare {firstOptionsState} {secondOptionsState} />
 		</div>
 
-		<!-- Enhanced Control Buttons -->
-		<div class="w-full max-w-4xl">
-			<div class="flex flex-col gap-2 md:flex-row">
-				<!-- Dataset A Controls -->
+		<div class="w-full">
+			<div class="flex w-full flex-col gap-2 md:flex-row">
 				<div class="group w-full">
 					<div
 						class="rounded-2xl border border-blue-200/50 bg-gradient-to-br from-white to-blue-50/30 p-6 shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-blue-100/50"
@@ -337,7 +283,6 @@
 					</div>
 				</div>
 
-				<!-- Dataset B Controls -->
 				<div class="group w-full">
 					<div
 						class="rounded-2xl border border-emerald-200/50 bg-gradient-to-br from-white to-emerald-50/30 p-6 shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-emerald-100/50"
@@ -399,7 +344,6 @@
 			</div>
 		</div>
 
-		<!-- Enhanced Drawers -->
 		<Drawer
 			class="flex h-full w-full items-center justify-center bg-transparent p-0"
 			placement={innerWidth > 1279 ? 'left' : 'top'}
