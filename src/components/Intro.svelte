@@ -3,6 +3,86 @@
 	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
 
+	let innerWidth = $state();
+	let innerHeight = $state();
+	let videoBox = $state();
+	let isVideoLoaded = $state(false);
+	let isAnimationRunning = $state(false);
+
+	// Enhanced device detection
+	let isSafari = $state(false);
+	let isMobile = $state(false);
+	let isSlowDevice = $state(false);
+	let showVideo = $state(true);
+	let videoSrc = $state('');
+
+	// Performance monitoring
+	let connectionSpeed = $state('unknown');
+	let deviceMemory = $state(4);
+
+	function detectDevice() {
+		const userAgent = navigator.userAgent.toLowerCase();
+
+		const isSafariBrowser =
+			userAgent.includes('safari') &&
+			!userAgent.includes('chrome') &&
+			!userAgent.includes('chromium') &&
+			!userAgent.includes('edg');
+
+		const isMobileDevice =
+			/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
+			window.innerWidth <= 768;
+
+		const connection =
+			navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+		let effectiveType = 'unknown';
+		let estimatedMemory = 4;
+
+		if (connection) {
+			effectiveType = connection.effectiveType || 'unknown';
+		}
+
+		if (navigator.deviceMemory) {
+			estimatedMemory = navigator.deviceMemory;
+		}
+
+		const isDeviceSlow =
+			estimatedMemory <= 2 ||
+			effectiveType === 'slow-2g' ||
+			effectiveType === '2g' ||
+			(isMobileDevice && estimatedMemory <= 4);
+
+		isSafari = isSafariBrowser;
+		isMobile = isMobileDevice;
+		isSlowDevice = isDeviceSlow;
+		connectionSpeed = effectiveType;
+		deviceMemory = estimatedMemory;
+
+		if (isSafariBrowser) {
+			showVideo = false;
+			videoSrc = '';
+		} else if (isDeviceSlow || effectiveType === 'slow-2g' || effectiveType === '2g') {
+			showVideo = false;
+			videoSrc = '';
+		} else {
+			showVideo = true;
+			videoSrc = '/Turtle.webm';
+		}
+
+		console.log('Device detection:', {
+			userAgent: navigator.userAgent,
+			isSafari,
+			isMobile,
+			isSlowDevice,
+			connectionSpeed,
+			deviceMemory,
+			showVideo,
+			videoSrc
+		});
+
+		return { isSafariBrowser, isMobileDevice, isDeviceSlow };
+	}
+
 	gsap.registerPlugin(ScrollToPlugin);
 
 	const handleClick = (section: string) => {
@@ -13,32 +93,111 @@
 		});
 	};
 
-	let innerWidth = $state();
-	let innerHeight = $state();
-	let videoBox = $state();
-	let isVideoLoaded = $state(false);
-	let isAnimationRunning = $state(false);
-
 	const tl = gsap.timeline();
 
-	function startAnimation(tl) {
-		// Ensure we have all required dimensions
-		if (!videoBox?.width || !innerWidth || !innerHeight) {
-			console.log('Waiting for dimensions...', {
-				videoBox: videoBox?.width,
-				innerWidth,
-				innerHeight
+	function createArrowAnimation() {
+		console.log('Creating arrow animation...');
+
+		// Set initial state
+		gsap.set('.call-to-arrow', {
+			opacity: 0,
+			scale: 0.9,
+			y: 20
+		});
+
+		// Entrance animation
+		gsap.to('.call-to-arrow', {
+			opacity: 1,
+			scale: 1,
+			y: 0,
+			duration: 2,
+			ease: 'back.out(1.2)',
+			delay: 2 // Start after page loads
+		});
+
+		// Continuous floating animation
+		gsap.to('.call-to-arrow', {
+			y: -12,
+			duration: 3,
+			ease: 'sine.inOut',
+			yoyo: true,
+			repeat: -1,
+			delay: 4
+		});
+
+		// Breathing scale effect
+		gsap.to('.call-to-arrow', {
+			scale: 1.1,
+			duration: 4,
+			ease: 'sine.inOut',
+			yoyo: true,
+			repeat: -1,
+			delay: 3
+		});
+
+		// Arrow bob animation
+		gsap.to('.call-to-arrow svg', {
+			y: -4,
+			duration: 2,
+			ease: 'sine.inOut',
+			yoyo: true,
+			repeat: -1,
+			delay: 4.5
+		});
+
+		// Subtle rotation
+		gsap.to('.call-to-arrow svg', {
+			rotation: 3,
+			duration: 6,
+			ease: 'sine.inOut',
+			yoyo: true,
+			repeat: -1,
+			delay: 5
+		});
+
+		const arrowElement = document.querySelector('.call-to-arrow');
+		if (arrowElement) {
+			arrowElement.addEventListener('click', () => {
+				gsap.to('.call-to-arrow', {
+					scale: 0.95,
+					duration: 0.1,
+					ease: 'power2.out',
+					yoyo: true,
+					repeat: 1
+				});
+				// Create expanding ring effect
+				gsap.fromTo(
+					'.call-to-arrow > div',
+					{
+						boxShadow: '0 0 0px rgba(255, 255, 255, 0.8)'
+					},
+					{
+						boxShadow: '0 0 60px rgba(255, 255, 255, 0)',
+						duration: 0.6,
+						ease: 'power2.out'
+					}
+				);
 			});
+		}
+	}
+
+	function startAnimation(tl) {
+		if (!showVideo) return false;
+
+		if (!videoBox?.width || !innerWidth || !innerHeight) {
+			console.log('Waiting for dimensions...');
 			return false;
 		}
 
-		console.log('Starting animation with:', { videoBox, innerWidth, innerHeight });
+		console.log('Starting animation...');
 
 		const startX = -videoBox.width / 2;
 		const startY = innerHeight / 2;
 		const endX = innerWidth / 2 - videoBox.width / 2;
 
-		// ✅ BEST PRACTICE: Use fromTo() for explicit control over start and end states
+		const animationDuration = isMobile ? 20 : 40;
+		const scaleFactor = isMobile ? 0.8 : 1.3;
+
 		tl.fromTo(
 			'.turtle-video',
 			{
@@ -48,22 +207,21 @@
 				opacity: 0
 			},
 			{
-				// TO state - end values with timing
 				x: endX,
 				y: innerHeight / 2 - videoBox.height / 2,
-				scale: 1.3,
+				scale: scaleFactor,
 				opacity: 1,
-				duration: 40,
+				duration: animationDuration,
 				ease: 'sine.out'
 			}
 		).to('.turtle-video', {
 			x: endX,
 			y: innerHeight / 2 - videoBox.height / 2,
-			scale: 0.4,
+			scale: isMobile ? 0.3 : 0.4,
 			opacity: 1,
-			duration: 30,
+			duration: isMobile ? 15 : 30,
 			repeat: -1,
-			yoyo: true, // Goes back and forth
+			yoyo: true,
 			ease: 'power2.inOut'
 		});
 
@@ -72,42 +230,80 @@
 	}
 
 	function handleVideoLoad() {
-		console.log('Video loaded');
-
+		console.log('Video loaded successfully');
 		isVideoLoaded = true;
 	}
 
-	// Effect to start animation when all conditions are met
-	$effect(() => {
-		if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
-			console.log('All conditions met, starting animation');
+	function handleVideoError(event) {
+		console.error('Video failed to load:', event);
+		showVideo = false;
+		videoSrc = '';
+	}
 
-			startAnimation(tl);
+	function preloadVideo() {
+		if (!showVideo || !videoSrc) return;
+
+		const video = document.createElement('video');
+		video.preload = 'metadata';
+		video.src = videoSrc;
+
+		if (connectionSpeed === '4g' || (!isMobile && deviceMemory > 4)) {
+			video.preload = 'auto';
+		}
+	}
+
+	$effect(() => {
+		if (showVideo && videoSrc) {
+			if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
+				console.log('All conditions met, starting animation');
+				startAnimation(tl);
+			}
+		} else {
+			console.log('Video disabled - no fallback needed');
 		}
 	});
 
 	onMount(() => {
 		console.log('Component mounted');
 
-		// Check if video element exists and is already loaded
-		const videoElement = document.querySelector('.turtle-video') as HTMLVideoElement;
+		detectDevice();
 
-		if (videoElement) {
-			// If video is already loaded (common after refresh)
-			if (videoElement.readyState >= 2) {
-				console.log('Video already loaded on mount');
-				isVideoLoaded = true;
-			}
+		// 🎯 START ARROW ANIMATION
+		// Add a small delay to ensure DOM is ready
+		setTimeout(() => {
+			createArrowAnimation();
+		}, 500);
 
-			// Add event listeners for video loading
-			videoElement.addEventListener('loadeddata', handleVideoLoad);
-			videoElement.addEventListener('canplay', handleVideoLoad);
+		if (showVideo && videoSrc) {
+			preloadVideo();
+
+			setTimeout(() => {
+				const videoElement = document.querySelector('.turtle-video') as HTMLVideoElement;
+
+				if (videoElement) {
+					if (videoElement.readyState >= 2) {
+						console.log('Video already loaded on mount');
+						isVideoLoaded = true;
+					}
+
+					videoElement.addEventListener('loadeddata', handleVideoLoad);
+					videoElement.addEventListener('canplay', handleVideoLoad);
+					videoElement.addEventListener('error', handleVideoError);
+				}
+			}, 100);
+		} else {
+			console.log('Video disabled for this device/connection');
 		}
 
-		// Cleanup function
 		return () => {
-			gsap.killTweensOf('.turtle-video');
-			tl.clear();
+			if (showVideo) {
+				gsap.killTweensOf('.turtle-video');
+				tl.clear();
+			}
+
+			gsap.killTweensOf('.call-to-arrow');
+			gsap.killTweensOf('.call-to-arrow svg');
+			gsap.killTweensOf('.call-to-arrow > div');
 		};
 	});
 </script>
@@ -115,27 +311,29 @@
 <svelte:window bind:innerWidth bind:innerHeight />
 
 <section class="relative flex min-h-screen w-full items-center justify-center overflow-hidden">
-	<!-- Video layer - positioned above background, below content -->
-	<div class="absolute inset-0 z-10 overflow-hidden">
-		<video
-			bind:contentRect={videoBox}
-			src="/Turtle.webm"
-			autoplay
-			loop
-			muted
-			playsinline
-			class="turtle-video absolute origin-center opacity-0"
-			onloadeddata={handleVideoLoad}
-		>
-			<!-- Fallback for browsers that don't support your video format -->
-			<track kind="captions" />
-			Your browser does not support the video tag.
-		</video>
-	</div>
+	{#if showVideo && videoSrc}
+		<div class="absolute inset-0 z-10 overflow-hidden">
+			<video
+				bind:contentRect={videoBox}
+				src={videoSrc}
+				autoplay
+				loop
+				muted
+				playsinline
+				preload={isMobile ? 'metadata' : 'auto'}
+				class="turtle-video absolute origin-center opacity-0"
+				onloadeddata={handleVideoLoad}
+				onerror={handleVideoError}
+				style="will-change: transform; transform: translateZ(0);"
+			>
+				<source src={videoSrc} type="video/webm" />
+				<track kind="captions" />
+			</video>
+		</div>
+	{/if}
 
 	<div class="relative z-20 container mx-auto flex justify-center px-6 py-16 lg:px-8 lg:py-24">
 		<div class="max-w-4xl">
-			<!-- Badge/Label -->
 			<div
 				class="animate-fade-in mb-8 inline-flex items-center rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm"
 			>
@@ -149,7 +347,6 @@
 				Interactive Data Exploration
 			</div>
 
-			<!-- Main heading with enhanced typography -->
 			<div class="mb-8">
 				<h1 class="mb-4 text-5xl leading-tight font-bold text-white lg:text-7xl">
 					<span
@@ -169,128 +366,24 @@
 				</p>
 			</div>
 
-			<!-- Enhanced subtitle with better spacing -->
 			<div class="mb-12 space-y-6">
 				<p class="max-w-3xl text-lg leading-relaxed text-white/90 lg:text-xl">
 					An interactive exploration of educational systems, challenges, and opportunities across
 					the diverse island nations of the Pacific Ocean.
 				</p>
-
-				<!-- Key stats cards -->
-				<div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-					<div
-						class="transform rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/15"
-					>
-						<div class="text-2xl font-bold text-white">22</div>
-						<div class="text-sm text-blue-100">Island Nations</div>
-					</div>
-					<div
-						class="transform rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/15"
-					>
-						<div class="text-2xl font-bold text-white">100+</div>
-						<div class="text-sm text-blue-100">Languages</div>
-					</div>
-					<div
-						class="transform rounded-xl border border-white/20 bg-white/10 p-4 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/15"
-					>
-						<div class="text-2xl font-bold text-white">2M+</div>
-						<div class="text-sm text-blue-100">Students</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Enhanced description with better visual hierarchy -->
-			<div class="mb-12 space-y-6">
-				<div class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm lg:p-8">
-					<p class="mb-4 leading-relaxed text-white/85">
-						The Pacific Islands present a unique educational landscape where geography, culture, and
-						climate intersect to create both extraordinary challenges and innovative solutions. From
-						the coral atolls of Tuvalu to the volcanic peaks of Fiji, students and educators
-						navigate distances measured in ocean miles, preserve indigenous knowledge systems, and
-						adapt to rising sea levels that threaten entire communities.
-					</p>
-					<p class="leading-relaxed text-white/85">
-						This visualization brings together data from 22 Pacific Island nations and territories,
-						examining enrollment patterns, language preservation efforts, infrastructure challenges,
-						and the resilient strategies these communities employ to ensure every child has access
-						to quality education—no matter how remote their island home.
-					</p>
-				</div>
-			</div>
-
-			<!-- Call-to-action buttons -->
-			<div class="mb-16 flex flex-col gap-4 sm:flex-row">
-				<button
-					onclick={() => {
-						handleClick('dataviz-section');
-					}}
-					class="inline-flex transform items-center rounded-full bg-white px-8 py-4 font-semibold text-blue-600 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-50 hover:shadow-xl"
-				>
-					<svg class="mr-2 size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M13 10V3L4 14h7v7l9-11h-7z"
-						/>
-					</svg>
-					Explore Interactive Data
-				</button>
-				<button
-					class="inline-flex transform items-center rounded-full border border-white/30 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-white/20"
-				>
-					<svg class="mr-2 size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-						/>
-					</svg>
-					Read Methodology
-				</button>
-			</div>
-
-			<!-- Enhanced methodology section -->
-			<div
-				class="rounded-2xl border border-white/20 bg-gradient-to-r from-white/5 to-white/10 p-6 backdrop-blur-sm lg:p-8"
-			>
-				<div class="flex items-start space-x-4">
-					<div class="flex-shrink-0">
-						<div class="flex size-12 items-center justify-center rounded-xl bg-yellow-400/20">
-							<svg
-								class="size-6 text-yellow-300"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-								/>
-							</svg>
-						</div>
-					</div>
-					<div>
-						<h3 class="mb-3 text-xl font-semibold text-white">Data Sources & Methodology</h3>
-						<p class="leading-relaxed text-white/80">
-							This analysis combines data from UNESCO Institute for Statistics, Pacific Islands
-							Forum Secretariat, and national education ministries across the region. Special
-							attention has been given to indigenous education systems and multilingual learning
-							environments that are often underrepresented in global education datasets.
-						</p>
-					</div>
-				</div>
 			</div>
 		</div>
 	</div>
-
-	<!-- Scroll indicator -->
-	<div class="absolute bottom-8 left-1/2 z-20 -translate-x-1/2 transform animate-bounce">
-		<div class="flex size-8 items-center justify-center rounded-full border-2 border-white/50">
-			<svg class="size-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+	<button
+		onclick={() => {
+			handleClick('description');
+		}}
+		class="call-to-arrow absolute bottom-[10%] z-20 flex cursor-pointer justify-center opacity-0"
+	>
+		<div
+			class="flex size-20 items-center justify-center rounded-full border-2 border-white/50 transition-all duration-300"
+		>
+			<svg class="size-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
 					stroke-linejoin="round"
@@ -299,10 +392,26 @@
 				/>
 			</svg>
 		</div>
-	</div>
+	</button>
 </section>
 
 <style>
+	.turtle-video {
+		filter: blur(0.4px);
+		transform: translateZ(0);
+		backface-visibility: hidden;
+		perspective: 1000px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.turtle-video {
+			animation: none !important;
+		}
+		.call-to-arrow {
+			animation: none !important;
+		}
+	}
+
 	@keyframes gradient-x {
 		0%,
 		100% {
@@ -319,7 +428,13 @@
 		animation: gradient-x 4s ease infinite;
 	}
 
-	.turtle-video {
-		filter: blur(0.4px);
+	/* Enhanced arrow styling for better GSAP animation */
+	.call-to-arrow {
+		will-change: transform, opacity;
+	}
+
+	.call-to-arrow > div {
+		will-change: border-color, box-shadow;
+		background: transparent; /* Ensure no background */
 	}
 </style>
