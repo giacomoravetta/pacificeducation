@@ -4,8 +4,7 @@
 	import { appData } from '../../state.svelte';
 
 	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
-	import { InfoCircleSolid, ArrowRightOutline } from 'flowbite-svelte-icons';
-	import { sineIn } from 'svelte/easing';
+	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 
 	let innerWidth = $state();
 
@@ -106,34 +105,6 @@
 			optionsState.selectedIslands = [...optionsState.selectedIslands, island];
 		}
 	};
-
-	const determineOptionType = (selectedOption: string) => {
-		if (islands.includes(selectedOption)) {
-			return 'island';
-		} else if (skills.includes(selectedOption)) {
-			return 'skill';
-		} else if (educationTypes.includes(selectedOption)) {
-			return 'education';
-		} else if (sexes.includes(selectedOption)) {
-			return 'sex';
-		}
-	};
-
-	const isIslandSelected = (islandName: string) => {
-		return optionsState.selectedIslands.includes(islandName);
-	};
-
-	const isSkillSelected = (skillName: string) => {
-		return optionsState.selectedSkills.includes(skillName);
-	};
-
-	const isEducationSelected = (education: string) => {
-		return optionsState.selectedEducation.includes(education);
-	};
-
-	const isSexSelected = (sex: string) => {
-		return optionsState.selectedSexes.includes(sex);
-	};
 </script>
 
 <svelte:window bind:innerWidth />
@@ -146,26 +117,19 @@
 			>Show Options</Button
 		>
 	</div>
+
 	<Drawer
-		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		class="flex h-full w-full items-center justify-center bg-transparent p-0"
 		placement={innerWidth > 1279 ? 'left' : 'top'}
 		bind:hidden
 	>
-		<div class="flex items-center justify-between">
-			<h5
-				id="drawer-label"
-				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
-			>
-				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options
-			</h5>
-			<CloseButton onclick={() => (hidden = true)} class="mb-4 dark:text-white" />
-		</div>
 		<OptionsSelector
 			{optionsState}
 			onSkillToggle={handleSkillToggle}
 			onEducationToggle={handleEducationToggle}
 			onSexToggle={handleSexToggle}
 			onIslandToggle={handleIslandToggle}
+			bind:hidden
 		/>
 	</Drawer>
 </section>

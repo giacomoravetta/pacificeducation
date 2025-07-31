@@ -204,55 +204,34 @@
 			>
 		</div>
 	</div>
-
 	<Drawer
-		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		class="flex h-full w-full items-center justify-center bg-transparent p-0"
 		placement={innerWidth > 1279 ? 'left' : 'top'}
 		bind:hidden={hiddenFirst}
 	>
-		<div class="flex items-center justify-between">
-			<h5
-				id="drawer-label"
-				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
-			>
-				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options Database 1
-			</h5>
-			<CloseButton onclick={() => (hiddenFirst = true)} class="mb-4 dark:text-white" />
-		</div>
-		<div class="w-full">
-			<OptionsSelector
-				optionsState={firstOptionsState}
-				onSkillToggle={handleFirstSkillToggle}
-				onEducationToggle={handleFirstEducationToggle}
-				onSexToggle={handleFirstSexToggle}
-				onIslandToggle={handleFirstIslandToggle}
-				compare={true}
-			/>
-		</div>
+		<OptionsSelector
+			optionsState={firstOptionsState}
+			onSkillToggle={handleFirstSkillToggle}
+			onEducationToggle={handleFirstEducationToggle}
+			onSexToggle={handleFirstSexToggle}
+			onIslandToggle={handleFirstIslandToggle}
+			compare={true}
+			bind:hidden={hiddenFirst}
+		/>
 	</Drawer>
 	<Drawer
-		class={innerWidth > 1279 ? 'w-1/4' : 'w-full'}
+		class="flex h-full w-full items-center justify-center bg-transparent p-0"
 		placement={innerWidth > 1279 ? 'left' : 'top'}
 		bind:hidden={hiddenSecond}
 	>
-		<div class="flex items-center justify-between">
-			<h5
-				id="drawer-label"
-				class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
-			>
-				<InfoCircleSolid class="me-2.5 h-5 w-5" />Options Database 2
-			</h5>
-			<CloseButton onclick={() => (hiddenSecond = true)} class="mb-4 dark:text-white" />
-		</div>
-		<div class="w-full">
-			<OptionsSelector
-				optionsState={secondOptionsState}
-				onSkillToggle={handleSecondSkillToggle}
-				onEducationToggle={handleSecondEducationToggle}
-				onSexToggle={handleSecondSexToggle}
-				onIslandToggle={handleSecondIslandToggle}
-				compare={true}
-			/>
-		</div>
+		<OptionsSelector
+			optionsState={secondOptionsState}
+			onSkillToggle={handleSecondSkillToggle}
+			onEducationToggle={handleSecondEducationToggle}
+			onSexToggle={handleSecondSexToggle}
+			onIslandToggle={handleSecondIslandToggle}
+			compare={true}
+			bind:hidden={hiddenSecond}
+		/>
 	</Drawer>
 </section>

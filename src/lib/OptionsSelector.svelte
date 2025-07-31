@@ -6,6 +6,8 @@
 	import { gsap } from 'gsap';
 	import { Draggable } from 'gsap/Draggable';
 	import { InertiaPlugin } from 'gsap/InertiaPlugin';
+	import { CloseButton } from 'flowbite-svelte';
+	import { InfoCircleSolid } from 'flowbite-svelte-icons';
 
 	gsap.registerPlugin(Draggable, InertiaPlugin);
 
@@ -22,6 +24,8 @@
 		onSexToggle?: (sex: string) => void;
 		onIslandToggle?: (island: string) => void;
 		compare?: boolean;
+		enableIslands?: boolean;
+		hidden: boolean;
 	}
 
 	let {
@@ -30,7 +34,9 @@
 		onEducationToggle,
 		onSexToggle,
 		onIslandToggle,
-		compare
+		compare,
+		enableIslands = true,
+		hidden = $bindable()
 	}: Props = $props();
 
 	// Derive static lists from data using Svelte 5 runes
@@ -242,15 +248,25 @@
 
 <div
 	class="ocean-background
-	relative flex w-full flex-col
+	relative flex w-full max-w-[80dvw]
+	flex-col
 	overflow-hidden
-	rounded-3xl border
-	border-white/20
+	rounded-xl
 	shadow-[0_20px_25px_-5px_rgb(0_0_0_/_0.1),0_10px_10px_-5px_rgb(0_0_0_/_0.04)]
 	backdrop-blur-lg before:pointer-events-none before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10
 	before:to-transparent
 "
 >
+	<div class="  flex items-center justify-end px-6 pt-6">
+		<CloseButton
+			onclick={() => {
+				console.log('clicked');
+				console.log(hidden);
+				hidden = true;
+			}}
+			class=" text-white hover:bg-blue-600"
+		/>
+	</div>
 	<!-- Skills Section -->
 	<div
 		class="
@@ -472,28 +488,30 @@
 	</div>
 
 	<!-- Islands Section -->
-	<div
-		class="
+
+	{#if enableIslands}
+		<div
+			class="
 		relative px-6 py-6
 		transition-all duration-300 ease-out
 		hover:bg-white/5
 	"
-	>
-		<div class="mb-4 flex items-center gap-3">
-			<div
-				class="
+		>
+			<div class="mb-4 flex items-center gap-3">
+				<div
+					class="
 				flex h-8 w-8
 				items-center justify-center rounded-lg
 				bg-white/20 text-[min(3dvw,17px)]
 				text-white backdrop-blur-sm
 			"
-			>
-				🏝️
+				>
+					🏝️
+				</div>
+				<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Islands</h3>
 			</div>
-			<h3 class=" text-[min(3dvw,17px)] font-semibold tracking-wide text-white">Islands</h3>
-		</div>
-		<div
-			class="
+			<div
+				class="
 			islands-section
 			cursor-grab
 			overflow-hidden
@@ -514,19 +532,19 @@
 			hover:[&::-webkit-scrollbar-thumb]:shadow-lg hover:[&::-webkit-scrollbar-thumb]:shadow-amber-500/30 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-white/10
 			[&::-webkit-scrollbar-track]:backdrop-blur-sm
 		"
-			style="scrollbar-width: thin; scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);"
-			use:gsapDragScroll
-		>
-			<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
-				{#each islands as island (island)}
-					{@const isSelected = optionsState.selectedIslands.includes(island)}
-					{@const isEnabled = areIslandsEnabled()}
-					{@const islandColor = optionsState.colorsIslands[island] || '#3b82f6'}
-					<button
-						disabled={!isEnabled ||
-							(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
-						onclick={handleFilterClick}
-						class="
+				style="scrollbar-width: thin; scrollbar-color: rgba(251, 191, 36, 0.6) rgba(255, 255, 255, 0.1);"
+				use:gsapDragScroll
+			>
+				<div class="scroll-content flex gap-3 pb-2 text-white" style="width: max-content;">
+					{#each islands as island (island)}
+						{@const isSelected = optionsState.selectedIslands.includes(island)}
+						{@const isEnabled = areIslandsEnabled()}
+						{@const islandColor = optionsState.colorsIslands[island] || '#3b82f6'}
+						<button
+							disabled={!isEnabled ||
+								(!isSelected && optionsState.selectedIslands.length != 0 && compare)}
+							onclick={handleFilterClick}
+							class="
 						cubic-bezier(0.4, 0,
 							0.2, 1) flex flex-shrink-0 transform-gpu items-center
 							gap-2 rounded-2xl px-5
@@ -535,19 +553,20 @@
 							duration-300
 							{isSelected ? `border shadow-lg` : 'border border-white/20 bg-white/15'}
 							{!isEnabled || (!isSelected && optionsState.selectedIslands.length != 0 && compare)
-							? 'pointer-events-none cursor-not-allowed opacity-30'
-							: 'hover:bg-white/25 hover:shadow-lg '}
+								? 'pointer-events-none cursor-not-allowed opacity-30'
+								: 'hover:bg-white/25 hover:shadow-lg '}
 						"
-						style="
+							style="
 							{isSelected ? `background: ${islandColor}; border-color: ${islandColor};` : ''}
 						"
-					>
-						<span>{island}</span>
-					</button>
-				{/each}
+						>
+							<span>{island}</span>
+						</button>
+					{/each}
+				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
 </div>
 
 <style>

@@ -114,9 +114,7 @@
 
 <svelte:window bind:innerWidth bind:innerHeight />
 
-<section
-	class="ocean-background relative flex min-h-screen w-full items-center justify-center overflow-hidden"
->
+<section class="relative flex min-h-screen w-full items-center justify-center overflow-hidden">
 	<!-- Video layer - positioned above background, below content -->
 	<div class="absolute inset-0 z-10 overflow-hidden">
 		<video

@@ -2,11 +2,11 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import * as d3 from 'd3';
-	import { Drawer, Button, CloseButton } from 'flowbite-svelte';
+	import { Drawer, Button } from 'flowbite-svelte';
 	import OptionsSelector from '$lib/OptionsSelector.svelte';
-	import { appState, appData } from '../../../../state.svelte';
 
-	let hidden9 = $state(true);
+	let hidden = $state(true);
+	let hiddenTime = $state(true);
 	// Svelte 5 reactive state using runes
 	let mapContainer = $state();
 	let selectedYear = $state(null); // Start with null, will be set when data is available
@@ -199,6 +199,319 @@
 		return [island.lat, island.lng];
 	}
 
+	// Close mobile tooltip function
+	function closeMobileTooltip() {
+		const mobileTooltip = d3.select('.mobile-column-tooltip');
+
+		if (!mobileTooltip.empty()) {
+			mobileTooltip
+				.transition()
+				.duration(200)
+				.style('opacity', '0')
+				.on('end', function () {
+					mobileTooltip.remove();
+					// Restore body scroll
+					document.body.style.overflow = '';
+					// Remove escape key listener
+					d3.select(window).on('keydown.mobile-tooltip', null);
+				});
+		}
+	}
+
+	// Enhanced mobile-responsive tooltip system for column interactions
+	function createMobileResponsiveTooltip(island, data, event) {
+		// Check if we're on mobile
+		const isMobile = window.innerWidth < 768;
+
+		if (isMobile) {
+			// Create mobile modal tooltip
+			createMobileModalTooltip(island, data);
+		} else {
+			// Create desktop hover tooltip
+			createDesktopTooltip(island, data, event);
+		}
+	}
+
+	// Mobile modal tooltip (centered, full overlay)
+	function createMobileModalTooltip(island, data) {
+		// Remove any existing mobile tooltips
+		d3.select('.mobile-column-tooltip').remove();
+
+		// Create overlay backdrop
+		const mobileTooltip = d3
+			.select('body')
+			.append('div')
+			.attr('class', 'mobile-column-tooltip')
+			.style('position', 'fixed')
+			.style('top', '0')
+			.style('left', '0')
+			.style('right', '0')
+			.style('bottom', '0')
+			.style('background', 'rgba(0, 0, 0, 0.5)')
+			.style('backdrop-filter', 'blur(8px)')
+			.style('z-index', '9999')
+			.style('display', 'flex')
+			.style('align-items', 'center')
+			.style('justify-content', 'center')
+			.style('padding', '20px')
+			.style('opacity', '0')
+			.style('cursor', 'pointer')
+			.on('click', function (event) {
+				// Close when clicking outside the modal content
+				if (event.target === this) {
+					closeMobileTooltip();
+				}
+			});
+
+		// Create modal content
+		const modalContent = mobileTooltip
+			.append('div')
+			.style(
+				'background',
+				'linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98))'
+			)
+			.style('color', 'white')
+			.style('border-radius', '20px')
+			.style('padding', '24px')
+			.style('max-width', '90vw')
+			.style('max-height', '80vh')
+			.style('overflow-y', 'auto')
+			.style('box-shadow', '0 20px 60px rgba(0, 0, 0, 0.4)')
+			.style('border', `3px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}`)
+			.style('cursor', 'default')
+			.style('transform', 'scale(0.8)')
+			.style('transition', 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)')
+			.on('click', function (event) {
+				// Prevent closing when clicking inside modal
+				event.stopPropagation();
+			});
+
+		// Performance indicators
+		const performance =
+			data.rate > 70
+				? { icon: '🔥', label: 'High Performance', color: '#10b981' }
+				: data.rate > 50
+					? { icon: '📈', label: 'Medium Performance', color: '#f59e0b' }
+					: { icon: '📉', label: 'Needs Improvement', color: '#ef4444' };
+
+		const trend = getTrendInfo(island, data.year);
+		const rankPosition = getRankPosition(data.rate);
+
+		// Create detailed mobile content
+		const content = `
+			<!-- Close button -->
+			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+				<div style="display: flex; align-items: center; gap: 12px;">
+					<div style="width: 16px; height: 16px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%; flex-shrink: 0;"></div>
+					<h2 style="font-weight: 800; font-size: 20px; margin: 0; line-height: 1.2;">${island.name}</h2>
+				</div>
+				<button class="close-mobile-tooltip" style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; padding: 8px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center;">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<line x1="18" y1="6" x2="6" y2="18"></line>
+						<line x1="6" y1="6" x2="18" y2="18"></line>
+					</svg>
+				</button>
+			</div>
+
+			<!-- Main metric -->
+			<div style="text-align: center; padding: 24px; background: rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 20px; border: 2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'};">
+				<div style="font-size: 48px; font-weight: 900; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; line-height: 1; margin-bottom: 8px;">${data.rate}%</div>
+				<div style="font-size: 16px; opacity: 0.9; font-weight: 600;">Literacy/Numeracy Rate</div>
+				<div style="font-size: 14px; opacity: 0.7; margin-top: 4px;">Year ${data.year}</div>
+			</div>
+
+			<!-- Stats grid -->
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+				<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; text-align: center;">
+					<div style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Regional Rank</div>
+					<div style="font-size: 24px; font-weight: 700;">#${rankPosition}</div>
+					<div style="font-size: 11px; opacity: 0.6;">of ${normalizedIslands.length} islands</div>
+				</div>
+				<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; text-align: center;">
+					<div style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Performance</div>
+					<div style="font-size: 20px; margin-bottom: 4px;">${performance.icon}</div>
+					<div style="font-size: 12px; font-weight: 600; color: ${performance.color};">${performance.label}</div>
+				</div>
+			</div>
+
+			<!-- Performance description -->
+			<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+				<div style="font-weight: 600; margin-bottom: 8px; font-size: 16px;">${performance.icon} ${performance.label}</div>
+				<div style="font-size: 14px; opacity: 0.9; line-height: 1.5;">${getPerformanceDescription(data.rate)}</div>
+			</div>
+
+			<!-- Trend information -->
+			${trend}
+
+			<!-- Tap anywhere to close hint -->
+			<div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+				<div style="font-size: 12px; opacity: 0.6;">Tap outside to close</div>
+			</div>
+		`;
+
+		modalContent.html(content);
+
+		// Add close button functionality
+		modalContent.select('.close-mobile-tooltip').on('click', closeMobileTooltip);
+
+		// Animate in
+		mobileTooltip.transition().duration(300).ease(d3.easeBackOut).style('opacity', '1');
+
+		modalContent
+			.transition()
+			.duration(300)
+			.delay(100)
+			.ease(d3.easeBackOut)
+			.style('transform', 'scale(1)');
+
+		// Add escape key listener
+		d3.select(window).on('keydown.mobile-tooltip', function (event) {
+			if (event.key === 'Escape') {
+				closeMobileTooltip();
+			}
+		});
+
+		// Prevent body scroll
+		document.body.style.overflow = 'hidden';
+	}
+
+	// Desktop hover tooltip (original behavior)
+	function createDesktopTooltip(island, data, event) {
+		// Remove any existing tooltips
+		d3.select('.column-tooltip').remove();
+
+		const columnTooltip = d3
+			.select('body')
+			.append('div')
+			.attr('class', 'column-tooltip')
+			.style('position', 'absolute')
+			.style(
+				'background',
+				'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
+			)
+			.style('color', 'white')
+			.style('padding', '16px 20px')
+			.style('border-radius', '12px')
+			.style('font-size', '14px')
+			.style('pointer-events', 'none')
+			.style('opacity', 0)
+			.style('backdrop-filter', 'blur(10px)')
+			.style('border', `2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}`)
+			.style('box-shadow', '0 8px 32px rgba(0, 0, 0, 0.3)')
+			.style('z-index', '1001')
+			.style('max-width', '320px');
+
+		const performance =
+			data.rate > 70
+				? '🔥 High Performance'
+				: data.rate > 50
+					? '📈 Medium Performance'
+					: '📉 Needs Improvement';
+
+		const trend = getTrendInfo(island, data.year);
+
+		let content = `
+			<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+				<div style="width: 12px; height: 12px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%;"></div>
+				<span style="font-weight: 700; font-size: 16px;">${island.name}</span>
+			</div>
+			<div style="border-left: 3px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}; padding-left: 12px; margin-bottom: 12px;">
+				<div style="font-size: 24px; font-weight: 800; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'};">${data.rate}%</div>
+				<div style="font-size: 12px; opacity: 0.8;">Literacy/Numeracy Rate</div>
+			</div>
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+				<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+					<div style="font-size: 12px; opacity: 0.7;">Year</div>
+					<div style="font-weight: 600;">${data.year}</div>
+				</div>
+				<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
+					<div style="font-size: 12px; opacity: 0.7;">Rank</div>
+					<div style="font-weight: 600;">${getRankPosition(data.rate)}/${normalizedIslands.length}</div>
+				</div>
+			</div>
+			<div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+				<div style="font-weight: 600; margin-bottom: 4px;">${performance}</div>
+				<div style="font-size: 12px; opacity: 0.8;">${getPerformanceDescription(data.rate)}</div>
+			</div>
+			${trend}
+		`;
+
+		columnTooltip
+			.html(content)
+			.style('left', event.pageX + 15 + 'px')
+			.style('top', event.pageY - 10 + 'px')
+			.transition()
+			.duration(300)
+			.style('opacity', 1);
+
+		// Auto-position to keep tooltip in viewport
+		setTimeout(() => {
+			const tooltip = columnTooltip.node();
+			const rect = tooltip.getBoundingClientRect();
+			const viewportWidth = window.innerWidth;
+			const viewportHeight = window.innerHeight;
+
+			// Adjust horizontal position
+			if (rect.right > viewportWidth - 10) {
+				columnTooltip.style('left', event.pageX - rect.width - 15 + 'px');
+			}
+
+			// Adjust vertical position
+			if (rect.bottom > viewportHeight - 10) {
+				columnTooltip.style('top', event.pageY - rect.height - 10 + 'px');
+			}
+		}, 10);
+	}
+
+	// Helper functions for enhanced tooltips
+	function getRankPosition(rate) {
+		const sortedRates = normalizedIslands
+			.map((island) => getYearData(island, selectedYear))
+			.filter((data) => data && data.rate > 0)
+			.map((data) => data.rate)
+			.sort((a, b) => b - a);
+
+		return sortedRates.indexOf(rate) + 1;
+	}
+
+	function getPerformanceDescription(rate) {
+		if (rate > 80) return 'Excellent educational outcomes';
+		if (rate > 70) return 'Strong performance, above regional average';
+		if (rate > 50) return 'Moderate performance, room for improvement';
+		if (rate > 30) return 'Below average, requires focused intervention';
+		return 'Significant challenges, needs comprehensive support';
+	}
+
+	function getTrendInfo(island, currentYear) {
+		const years = Object.keys(island.rates).map(Number).sort();
+		const currentIndex = years.indexOf(currentYear);
+
+		if (currentIndex > 0) {
+			const prevYear = years[currentIndex - 1];
+			const prevRate = island.rates[prevYear];
+			const currentRate = island.rates[currentYear];
+			const change = currentRate - prevRate;
+
+			if (Math.abs(change) < 1) {
+				return `<div style="background: rgba(100,116,139,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
+					📊 <strong>Stable:</strong> ${change >= 0 ? '+' : ''}${change.toFixed(1)}% from ${prevYear}
+				</div>`;
+			} else if (change > 0) {
+				return `<div style="background: rgba(34,197,94,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
+					📈 <strong>Improving:</strong> +${change.toFixed(1)}% from ${prevYear}
+				</div>`;
+			} else {
+				return `<div style="background: rgba(239,68,68,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
+					📉 <strong>Declining:</strong> ${change.toFixed(1)}% from ${prevYear}
+				</div>`;
+			}
+		}
+
+		return `<div style="background: rgba(100,116,139,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
+			📊 <strong>Baseline year</strong> - No previous data available
+		</div>`;
+	}
+
 	// Enhanced animated column visualization with better scaling
 	function createAnimatedColumns(group, island, data, hasData) {
 		// Only show columns if filters are ready
@@ -304,93 +617,31 @@
 				.attr('width', Math.max(columnWidth + 4, 16))
 				.attr('height', columnHeight + 10);
 
-			// Add column-specific hover handlers
+			// Add mobile-responsive hover handlers
 			hoverArea
-				.on('mouseenter', function (event) {
+				.on('mouseenter touchstart', function (event) {
+					event.preventDefault();
+
 					// Highlight the column
 					column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
 
-					// Create detailed tooltip for column
-					const columnTooltip = d3
-						.select('body')
-						.selectAll('.column-tooltip')
-						.data([null])
-						.join('div')
-						.attr('class', 'column-tooltip')
-						.style('position', 'absolute')
-						.style(
-							'background',
-							'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
-						)
-						.style('color', 'white')
-						.style('padding', '16px 20px')
-						.style('border-radius', '12px')
-						.style('font-size', '14px')
-						.style('pointer-events', 'none')
-						.style('opacity', 0)
-						.style('backdrop-filter', 'blur(10px)')
-						.style('border', `2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}`)
-						.style('box-shadow', '0 8px 32px rgba(0, 0, 0, 0.3)')
-						.style('z-index', '1001');
-
-					// Create detailed content for column hover
-					const performance =
-						data.rate > 70
-							? '🔥 High Performance'
-							: data.rate > 50
-								? '📈 Medium Performance'
-								: '📉 Needs Improvement';
-					const trend = getTrendInfo(island, data.year);
-
-					let content = `
-						<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-							<div style="width: 12px; height: 12px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%;"></div>
-							<span style="font-weight: 700; font-size: 16px;">${island.name}</span>
-						</div>
-						<div style="border-left: 3px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}; padding-left: 12px; margin-bottom: 12px;">
-							<div style="font-size: 24px; font-weight: 800; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'};">${data.rate}%</div>
-							<div style="font-size: 12px; opacity: 0.8;">Literacy/Numeracy Rate</div>
-						</div>
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-							<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-								<div style="font-size: 12px; opacity: 0.7;">Year</div>
-								<div style="font-weight: 600;">${data.year}</div>
-							</div>
-							<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-								<div style="font-size: 12px; opacity: 0.7;">Rank</div>
-								<div style="font-weight: 600;">${getRankPosition(data.rate)}/${normalizedIslands.length}</div>
-							</div>
-						</div>
-						<div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-							<div style="font-weight: 600; margin-bottom: 4px;">${performance}</div>
-							<div style="font-size: 12px; opacity: 0.8;">${getPerformanceDescription(data.rate)}</div>
-						</div>
-						${trend}
-						<div style="font-size: 11px; opacity: 0.6; margin-top: 8px; text-align: center;">
-							📊 Column height: ${columnHeight.toFixed(0)}px
-						</div>
-					`;
-
-					columnTooltip
-						.html(content)
-						.style('left', event.pageX + 15 + 'px')
-						.style('top', event.pageY - 10 + 'px')
-						.transition()
-						.duration(300)
-						.style('opacity', 1);
+					// Create responsive tooltip
+					createMobileResponsiveTooltip(island, data, event);
 				})
 				.on('mouseleave', function () {
-					// Remove column highlight
-					column.style('stroke-width', 1).style('filter', 'none');
-
-					// Remove column tooltip
-					d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
+					// Only remove highlight and tooltip on desktop
+					if (window.innerWidth >= 768) {
+						column.style('stroke-width', 1).style('filter', 'none');
+						d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
+					}
 				})
 				.on('mousemove', function (event) {
-					// Update tooltip position
-					d3.select('.column-tooltip')
-						.style('left', event.pageX + 15 + 'px')
-						.style('top', event.pageY - 10 + 'px');
+					// Update desktop tooltip position
+					if (window.innerWidth >= 768) {
+						d3.select('.column-tooltip')
+							.style('left', event.pageX + 15 + 'px')
+							.style('top', event.pageY - 10 + 'px');
+					}
 				});
 
 			// Shadow effect
@@ -461,55 +712,6 @@
 			columnGroup.selectAll('.column-glow').remove();
 			columnGroup.selectAll('.column-hover-area').remove();
 		}
-	}
-
-	// Helper functions for enhanced tooltips
-	function getRankPosition(rate) {
-		const sortedRates = normalizedIslands
-			.map((island) => getYearData(island, selectedYear))
-			.filter((data) => data && data.rate > 0)
-			.map((data) => data.rate)
-			.sort((a, b) => b - a);
-
-		return sortedRates.indexOf(rate) + 1;
-	}
-
-	function getPerformanceDescription(rate) {
-		if (rate > 80) return 'Excellent educational outcomes';
-		if (rate > 70) return 'Strong performance, above regional average';
-		if (rate > 50) return 'Moderate performance, room for improvement';
-		if (rate > 30) return 'Below average, requires focused intervention';
-		return 'Significant challenges, needs comprehensive support';
-	}
-
-	function getTrendInfo(island, currentYear) {
-		const years = Object.keys(island.rates).map(Number).sort();
-		const currentIndex = years.indexOf(currentYear);
-
-		if (currentIndex > 0) {
-			const prevYear = years[currentIndex - 1];
-			const prevRate = island.rates[prevYear];
-			const currentRate = island.rates[currentYear];
-			const change = currentRate - prevRate;
-
-			if (Math.abs(change) < 1) {
-				return `<div style="background: rgba(100,116,139,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
-					📊 <strong>Stable:</strong> ${change >= 0 ? '+' : ''}${change.toFixed(1)}% from ${prevYear}
-				</div>`;
-			} else if (change > 0) {
-				return `<div style="background: rgba(34,197,94,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
-					📈 <strong>Improving:</strong> +${change.toFixed(1)}% from ${prevYear}
-				</div>`;
-			} else {
-				return `<div style="background: rgba(239,68,68,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
-					📉 <strong>Declining:</strong> ${change.toFixed(1)}% from ${prevYear}
-				</div>`;
-			}
-		}
-
-		return `<div style="background: rgba(100,116,139,0.2); padding: 8px; border-radius: 6px; font-size: 12px;">
-			📊 <strong>Baseline year</strong> - No previous data available
-		</div>`;
 	}
 
 	function updateVisualization() {
@@ -636,28 +838,6 @@
 
 		console.log('Rendering', normalizedIslands.length, 'islands');
 
-		// Create tooltip
-		const tooltip = d3
-			.select('body')
-			.selectAll('.map-tooltip')
-			.data([null])
-			.join('div')
-			.attr('class', 'map-tooltip')
-			.style('position', 'absolute')
-			.style(
-				'background',
-				'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.95))'
-			)
-			.style('color', 'white')
-			.style('padding', '12px 16px')
-			.style('border-radius', '8px')
-			.style('font-size', '13px')
-			.style('pointer-events', 'none')
-			.style('opacity', 0)
-			.style('backdrop-filter', 'blur(10px)')
-			.style('border', '1px solid rgba(255,255,255,0.1)')
-			.style('z-index', '1000');
-
 		// Create island groups
 		const islandGroups = d3Overlay
 			.selectAll('.island-group')
@@ -683,7 +863,7 @@
 			const hasData = data && data.rate > 0;
 			const radius = hasData ? Math.max(8, Math.sqrt(data.rate) * 0.6) : 6;
 
-			// Main circle - use appState colors
+			// Main circle - use optionsState colors
 			group
 				.append('circle')
 				.attr('class', 'main-circle')
@@ -693,9 +873,10 @@
 				.style('stroke-width', 2)
 				.style('cursor', 'pointer');
 
-			// Enhanced event handlers for island circle - same as column hover
+			// Enhanced event handlers for island circle - mobile responsive
 			group
-				.on('mouseenter', function (event) {
+				.on('mouseenter touchstart', function (event) {
+					event.preventDefault();
 					currentHover = island.name;
 					const currentData = getYearData(island, selectedYear);
 
@@ -706,116 +887,30 @@
 						column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
 					}
 
-					// Create the same detailed tooltip as column hover
-					const columnTooltip = d3
-						.select('body')
-						.selectAll('.column-tooltip')
-						.data([null])
-						.join('div')
-						.attr('class', 'column-tooltip')
-						.style('position', 'absolute')
-						.style(
-							'background',
-							'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95))'
-						)
-						.style('color', 'white')
-						.style('padding', '16px 20px')
-						.style('border-radius', '12px')
-						.style('font-size', '14px')
-						.style('pointer-events', 'none')
-						.style('opacity', 0)
-						.style('backdrop-filter', 'blur(10px)')
-						.style('border', `2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}`)
-						.style('box-shadow', '0 8px 32px rgba(0, 0, 0, 0.3)')
-						.style('z-index', '1001');
-
 					if (currentData && currentData.rate > 0) {
-						// Use the same detailed content as column hover
-						const performance =
-							currentData.rate > 70
-								? '🔥 High Performance'
-								: currentData.rate > 50
-									? '📈 Medium Performance'
-									: '📉 Needs Improvement';
-						const trend = getTrendInfo(island, currentData.year);
-
-						// Calculate column height for display
-						const intensity = currentData.rate / 100;
-						const maxColumnHeight = 20 + intensity * 40;
-						const columnHeight = Math.max(5, intensity * maxColumnHeight);
-
-						let content = `
-							<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-								<div style="width: 12px; height: 12px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%;"></div>
-								<span style="font-weight: 700; font-size: 16px;">${island.name}</span>
-							</div>
-							<div style="border-left: 3px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'}; padding-left: 12px; margin-bottom: 12px;">
-								<div style="font-size: 24px; font-weight: 800; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'};">${currentData.rate}%</div>
-								<div style="font-size: 12px; opacity: 0.8;">Literacy/Numeracy Rate</div>
-							</div>
-							<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-								<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-									<div style="font-size: 12px; opacity: 0.7;">Year</div>
-									<div style="font-weight: 600;">${currentData.year}</div>
-								</div>
-								<div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px;">
-									<div style="font-size: 12px; opacity: 0.7;">Rank</div>
-									<div style="font-weight: 600;">${getRankPosition(currentData.rate)}/${normalizedIslands.length}</div>
-								</div>
-							</div>
-							<div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-								<div style="font-weight: 600; margin-bottom: 4px;">${performance}</div>
-								<div style="font-size: 12px; opacity: 0.8;">${getPerformanceDescription(currentData.rate)}</div>
-							</div>
-							${trend}
-							<div style="font-size: 11px; opacity: 0.6; margin-top: 8px; text-align: center;">
-								📊 Column height: ${columnHeight.toFixed(0)}px
-							</div>
-						`;
-
-						columnTooltip
-							.html(content)
-							.style('left', event.pageX + 15 + 'px')
-							.style('top', event.pageY - 10 + 'px')
-							.transition()
-							.duration(300)
-							.style('opacity', 1);
-					} else {
-						// Fallback to simple tooltip for no data
-						let content = `<div style="font-weight: 600; margin-bottom: 8px;">${island.name}</div>`;
-						content += `<div style="opacity: 0.8;">No data for ${selectedYear}</div>`;
-
-						// Show available years
-						const availableYears = Object.keys(island.rates).sort();
-						if (availableYears.length > 0) {
-							content += `<div style="margin-top: 4px; font-size: 11px; opacity: 0.7;">📊 Years: ${availableYears.join(', ')}</div>`;
-						}
-
-						columnTooltip
-							.html(content)
-							.style('left', event.pageX + 15 + 'px')
-							.style('top', event.pageY - 10 + 'px')
-							.transition()
-							.duration(300)
-							.style('opacity', 1);
+						// Create mobile-responsive tooltip
+						createMobileResponsiveTooltip(island, currentData, event);
 					}
 				})
 				.on('mouseleave', function () {
-					currentHover = null;
+					// Only remove highlight and tooltip on desktop
+					if (window.innerWidth >= 768) {
+						currentHover = null;
 
-					// Remove column highlight
-					const columnGroup = group.select('.column-system');
-					const column = columnGroup.select('.data-column');
-					if (!column.empty()) {
-						column.style('stroke-width', 1).style('filter', 'none');
+						// Remove column highlight
+						const columnGroup = group.select('.column-system');
+						const column = columnGroup.select('.data-column');
+						if (!column.empty()) {
+							column.style('stroke-width', 1).style('filter', 'none');
+						}
+
+						// Remove desktop tooltip
+						d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
 					}
-
-					// Remove detailed tooltip
-					d3.select('.column-tooltip').transition().duration(200).style('opacity', 0).remove();
 				})
 				.on('mousemove', function (event) {
-					if (currentHover) {
-						// Update tooltip position
+					if (currentHover && window.innerWidth >= 768) {
+						// Update desktop tooltip position
 						d3.select('.column-tooltip')
 							.style('left', event.pageX + 15 + 'px')
 							.style('top', event.pageY - 10 + 'px');
@@ -835,7 +930,16 @@
 		if (d3Overlay) {
 			d3Overlay.selectAll('*').remove();
 		}
+		// Clean up all tooltips
 		d3.select('body').selectAll('.map-tooltip').remove();
+		d3.select('body').selectAll('.column-tooltip').remove();
+		d3.select('body').selectAll('.mobile-column-tooltip').remove();
+
+		// Remove any lingering event listeners
+		d3.select(window).on('keydown.mobile-tooltip', null);
+
+		// Restore body scroll if it was disabled
+		document.body.style.overflow = '';
 	}
 
 	// Effects using Svelte 5 runes
@@ -904,86 +1008,255 @@
 	});
 </script>
 
-<!-- Time Controls -->
-
 <!-- Map -->
 <div class="relative overflow-hidden rounded-xl border border-white/20 shadow-xl">
 	<div class="aspect-square">
 		<div class="pointer-events-none absolute z-10 h-full w-full">
-			<!-- Time Controls in top left -->
+			<!-- Time Controls - Mobile Responsive -->
 			{#if !isInitializing && availableYears.length > 0 && filtersReady && selectedYear !== null}
+				<!-- Mobile: Fullscreen overlay with centered modal -->
+				<!-- Desktop: Positioned left corner with fixed width -->
 				<div
-					class="absolute top-4 left-4 max-w-sm rounded-lg border border-white/20 bg-white/95 p-4 shadow-lg backdrop-blur-sm"
+					class="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm sm:absolute sm:inset-auto sm:right-auto sm:bottom-[2%] sm:left-[2%] sm:max-w-[300px] sm:bg-transparent sm:p-0 sm:backdrop-blur-none lg:max-w-sm xl:max-w-md"
+					onclick={handleOutsideClick()}
+					class:hidden={hiddenTime}
 				>
-					<!-- Time Slider -->
-					<div class="pointer-events-auto flex flex-col gap-3">
-						<div class="flex items-center gap-2">
-							<span class="text-sm font-semibold text-slate-700">Year:</span>
-							<span class="text-lg font-bold text-blue-600">
-								{selectedYear}
-							</span>
-						</div>
+					<!-- Modal container -->
+					<div
+						class="hover:shadow-3xl w-full max-w-sm rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300 sm:max-w-none sm:rounded-xl"
+					>
+						<!-- Main Container -->
+						<div class="pointer-events-auto p-4 sm:p-5">
+							<!-- Header Section -->
+							<div class="mb-4 flex items-center justify-between sm:mb-3">
+								<div class="flex items-center gap-3">
+									<div
+										class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 sm:h-6 sm:w-6"
+									>
+										<svg
+											class="h-4 w-4 text-blue-600 sm:h-3 sm:w-3"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+											/>
+										</svg>
+									</div>
+									<div>
+										<span class="block text-xs font-medium text-slate-500 sm:text-xs"
+											>Current Year</span
+										>
+										<span class="block text-xl font-bold text-blue-600 sm:text-lg">
+											{selectedYear}
+										</span>
+									</div>
+								</div>
 
-						<div class="relative">
-							<input
-								type="range"
-								min="0"
-								max={availableYears.length - 1}
-								value={availableYears.indexOf(parseInt(selectedYear))}
-								oninput={(e) => {
-									const index = parseInt(e.target.value);
-									selectedYear = availableYears[index];
-								}}
-								class="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-400"
-							/>
-							<!-- Year markers -->
-							<div class="mt-1 flex justify-between text-xs text-slate-500">
-								<span>{availableYears[0]}</span>
-								<span>{availableYears[availableYears.length - 1]}</span>
+								<!-- Close button (mobile only) -->
+								<button
+									class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 sm:hidden"
+									onclick={() => (hiddenTime = true)}
+									aria-label="Close time controls"
+								>
+									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M6 18L18 6M6 6l12 12"
+										/>
+									</svg>
+								</button>
+
+								<!-- Year Counter (Hidden on mobile, shown on larger screens) -->
+								<div class="hidden text-right sm:block">
+									<span class="block text-xs text-slate-400">Timeline</span>
+									<span class="block text-sm font-semibold text-slate-600">
+										{availableYears.indexOf(parseInt(selectedYear)) + 1} / {availableYears.length}
+									</span>
+								</div>
+							</div>
+
+							<!-- Progress Indicator (Mobile-friendly) -->
+							<div class="mb-4 sm:mb-3">
+								<div class="mb-2 flex items-center justify-between">
+									<span class="text-xs font-medium text-slate-600">Progress</span>
+									<span class="text-xs text-slate-500">
+										{Math.round(
+											(availableYears.indexOf(parseInt(selectedYear)) /
+												(availableYears.length - 1)) *
+												100
+										)}%
+									</span>
+								</div>
+								<div class="h-2 w-full rounded-full bg-slate-200">
+									<div
+										class="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+										style="width: {(availableYears.indexOf(parseInt(selectedYear)) /
+											(availableYears.length - 1)) *
+											100}%"
+									></div>
+								</div>
+							</div>
+
+							<!-- Range Slider -->
+							<div class="mb-4 sm:mb-3">
+								<div class="relative">
+									<!-- Enhanced mobile-friendly slider -->
+									<input
+										type="range"
+										min="0"
+										max={availableYears.length - 1}
+										value={availableYears.indexOf(parseInt(selectedYear))}
+										oninput={(e) => {
+											const index = parseInt(e.target.value);
+											selectedYear = availableYears[index];
+										}}
+										class="range-slider h-3 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
+									/>
+
+									<!-- Year range labels -->
+									<div class="mt-2 flex justify-between text-xs font-medium text-slate-500">
+										<span class="rounded bg-slate-100 px-2 py-1">
+											{availableYears[0]}
+										</span>
+										<span class="rounded bg-slate-100 px-2 py-1">
+											{availableYears[availableYears.length - 1]}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- Control Buttons -->
+							<div class="space-y-3 sm:space-y-2">
+								<!-- Primary Controls Row -->
+								<div class="flex gap-2">
+									<!-- Play/Pause Button (Larger on mobile) -->
+									{#if !isPlaying}
+										<button
+											onclick={playAnimation}
+											disabled={availableYears.length < 2}
+											class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-3 sm:py-2"
+										>
+											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M8 5v14l11-7z" />
+											</svg>
+											<span class="sm:hidden">Play Animation</span>
+											<span class="hidden sm:inline">Play</span>
+										</button>
+									{:else}
+										<button
+											onclick={stopAnimation}
+											class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:flex-none sm:px-3 sm:py-2"
+										>
+											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+											</svg>
+											<span class="sm:hidden">Stop Animation</span>
+											<span class="hidden sm:inline">Stop</span>
+										</button>
+									{/if}
+
+									<!-- Reset Button -->
+									<button
+										onclick={resetToFirstYear}
+										title="Reset to first year"
+										class="flex items-center justify-center rounded-xl bg-slate-600 px-4 py-3 text-white shadow-lg transition-all duration-200 hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:px-3 sm:py-2"
+									>
+										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+											/>
+										</svg>
+										<span class="ml-2 text-sm font-medium sm:hidden">Reset</span>
+									</button>
+								</div>
+
+								<!-- Secondary Controls Row (Mobile) -->
+								<div class="flex items-center justify-between rounded-lg bg-slate-50 p-3 sm:hidden">
+									<div class="flex items-center gap-2">
+										<svg
+											class="h-4 w-4 text-slate-500"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M9 19V6l6 6-6 6z"
+											/>
+										</svg>
+										<span class="text-sm font-medium text-slate-600">Timeline</span>
+									</div>
+									<div class="text-right">
+										<div class="text-sm font-semibold text-slate-700">
+											Year {availableYears.indexOf(parseInt(selectedYear)) + 1} of {availableYears.length}
+										</div>
+										<div class="text-xs text-slate-500">
+											{availableYears.length} years available
+										</div>
+									</div>
+								</div>
+
+								<!-- Desktop Info Row -->
+								<div class="hidden items-center justify-between text-xs text-slate-500 sm:flex">
+									<span>{availableYears.length} years available</span>
+									{#if isPlaying}
+										<div class="flex items-center gap-1">
+											<div class="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
+											<span>Playing...</span>
+										</div>
+									{/if}
+								</div>
 							</div>
 						</div>
 
-						<!-- Animation Controls -->
-						<div class="flex items-center gap-2">
-							{#if !isPlaying}
-								<button
-									onclick={playAnimation}
-									class="flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700"
-									disabled={availableYears.length < 2}
-								>
-									<span>▶️</span>
-									<span>Play</span>
-								</button>
-							{:else}
-								<button
-									onclick={stopAnimation}
-									class="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-700"
-								>
-									<span>⏸️</span>
-									<span>Stop</span>
-								</button>
-							{/if}
-
-							<button
-								onclick={resetToFirstYear}
-								class="flex items-center gap-1 rounded bg-slate-600 px-2 py-1.5 text-sm text-white transition-colors hover:bg-slate-700"
-								title="Reset to first year"
-							>
-								<span>🔄</span>
-							</button>
-
-							<div class="ml-1 text-xs text-slate-600">
-								{availableYears.length} years
+						<!-- Mobile-only bottom indicator when playing -->
+						{#if isPlaying}
+							<div class="border-t border-white/20 bg-green-50 p-3 sm:hidden">
+								<div class="flex items-center justify-center gap-2">
+									<div class="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
+									<span class="text-sm font-medium text-green-700">Animation Playing</span>
+									<span class="text-xs text-green-600">(1.5s per year)</span>
+								</div>
 							</div>
-						</div>
+						{/if}
 					</div>
 				</div>
+
+				<!-- Show Time Controls Button (Mobile only) -->
+				<button
+					class="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 sm:hidden"
+					class:hidden={!hiddenTime}
+					onclick={() => (hiddenTime = false)}
+					aria-label="Show time controls"
+				>
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+					<span>Time Controls</span>
+				</button>
 			{/if}
 
 			<!-- Filters not ready warning -->
 			{#if !filtersReady && !isInitializing}
 				<div
-					class="absolute top-4 left-4 rounded-lg border border-amber-300 bg-amber-100/95 p-4 shadow-lg backdrop-blur-sm"
+					class="- absolute top-1/2 left-1/2 -translate-x-1/2 rounded-lg border border-amber-300 bg-amber-100/95 p-4 shadow-lg backdrop-blur-sm"
 				>
 					<div class="flex items-center gap-2">
 						<span class="text-xl">⚠️</span>
@@ -996,38 +1269,9 @@
 			{/if}
 
 			<Button
-				class="pointer-events-auto absolute bottom-[2%] left-[2%] "
-				onclick={() => (hidden9 = false)}>Show Options</Button
+				class="pointer-events-auto absolute top-[2%] left-[2%]"
+				onclick={() => (hidden = false)}>Show Options</Button
 			>
-
-			<Drawer
-				position="absolute"
-				placement="bottom"
-				bind:hidden={hidden9}
-				class="pointer-events-auto w-full"
-			>
-				<div class="pointer-events-auto h-full w-full">
-					<div class="flex h-1/4 w-full items-center justify-between">
-						<h5
-							id="drawer-label"
-							class="mb-4 inline-flex items-center text-base font-semibold text-gray-500 dark:text-gray-400"
-						>
-							Filter Options
-						</h5>
-						<CloseButton
-							onclick={() => (hidden9 = true)}
-							class="pointer-events-auto mb-4 dark:text-white"
-						/>
-					</div>
-					<OptionsSelector
-						{optionsState}
-						onSkillToggle={handleSkillToggle}
-						onEducationToggle={handleEducationToggle}
-						onSexToggle={handleSexToggle}
-						enableIslands={false}
-					/>
-				</div>
-			</Drawer>
 		</div>
 
 		<div bind:this={mapContainer} class="z-0 aspect-square"></div>
@@ -1050,39 +1294,358 @@
 				<p class="mt-2 text-sm text-slate-500">Try adjusting your filters to see data</p>
 			</div>
 		</div>
-	{:else if !filtersReady && !isInitializing}
-		<div class="absolute inset-0 flex items-center justify-center bg-slate-50/90 backdrop-blur-sm">
-			<div class="text-center">
-				<span class="mb-4 block text-4xl">⚙️</span>
-				<p class="font-semibold text-slate-600">Configure Filters First</p>
-				<p class="mt-2 text-sm text-slate-500">
-					Select Sex, Education, and Skill options to view data
-				</p>
-				<Button class="mt-4" onclick={() => (hidden9 = false)}>Open Filter Options</Button>
-			</div>
-		</div>
 	{/if}
 </div>
 
-<!-- Footer -->
-<div class="mt-8 text-center">
+<Drawer class="flex h-full w-full items-center justify-center bg-transparent p-0" bind:hidden>
+	<OptionsSelector
+		{optionsState}
+		onSkillToggle={handleSkillToggle}
+		onEducationToggle={handleEducationToggle}
+		onSexToggle={handleSexToggle}
+		enableIslands={false}
+		bind:hidden
+	/>
+</Drawer>
+
+<!-- Mobile-Responsive Time Slider -->
+<div class=" relative">
+	<!-- Mobile: Full width bottom sheet -->
+	<!-- Desktop: Fixed width left corner -->
 	<div
-		class="inline-flex items-center gap-2 rounded-full bg-white/60 px-6 py-3 text-sm text-slate-600 backdrop-blur-sm"
+		class="hover:shadow-3xl rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md transition-all duration-300 sm:rounded-lg"
 	>
-		<span>Powered by</span>
-		<div class="flex items-center gap-1">
-			<span class="font-semibold text-blue-600">Svelte 5</span>
-			<span class="text-slate-400">•</span>
-			<span class="font-semibold text-emerald-600">Leaflet</span>
-			<span class="text-slate-400">•</span>
-			<span class="font-semibold text-purple-600">D3.js</span>
+		<!-- Time Slider Container -->
+		<div class="pointer-events-auto p-4 sm:p-4">
+			<!-- Header Section (Enhanced for mobile) -->
+			<div class="mb-4 flex items-center justify-between sm:mb-3">
+				<div class="flex items-center gap-3">
+					<!-- Time icon (larger on mobile) -->
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 sm:h-8 sm:w-8"
+					>
+						<svg
+							class="h-5 w-5 text-blue-600 sm:h-4 sm:w-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+					</div>
+					<div>
+						<span class="block text-sm font-medium text-slate-500 sm:text-xs">Current Year</span>
+						<span class="block text-2xl font-bold text-blue-600 sm:text-lg">
+							{selectedYear}
+						</span>
+					</div>
+				</div>
+
+				<!-- Year progress indicator (mobile only) -->
+				<div class="text-right sm:hidden">
+					<span class="block text-xs font-medium text-slate-400">Progress</span>
+					<span class="block text-lg font-bold text-slate-700">
+						{availableYears.indexOf(parseInt(selectedYear)) + 1}/{availableYears.length}
+					</span>
+				</div>
+
+				<!-- Desktop year counter -->
+				<div class="hidden text-right sm:block">
+					<span class="block text-xs text-slate-400">Year</span>
+					<span class="block text-sm font-semibold text-slate-600">
+						{availableYears.indexOf(parseInt(selectedYear)) + 1} / {availableYears.length}
+					</span>
+				</div>
+			</div>
+
+			<!-- Progress Bar (Mobile-friendly visual indicator) -->
+			<div class="mb-4 sm:hidden">
+				<div class="mb-2 flex items-center justify-between">
+					<span class="text-xs font-medium text-slate-600">Timeline Progress</span>
+					<span class="text-xs text-slate-500">
+						{Math.round(
+							(availableYears.indexOf(parseInt(selectedYear)) / (availableYears.length - 1)) * 100
+						)}%
+					</span>
+				</div>
+				<div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+					<div
+						class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500 ease-out"
+						style="width: {(availableYears.indexOf(parseInt(selectedYear)) /
+							(availableYears.length - 1)) *
+							100}%"
+					></div>
+				</div>
+			</div>
+
+			<!-- Range Slider Section -->
+			<div class="mb-4 sm:mb-3">
+				<div class="relative">
+					<!-- Touch-friendly slider -->
+					<input
+						type="range"
+						min="0"
+						max={availableYears.length - 1}
+						value={availableYears.indexOf(parseInt(selectedYear))}
+						oninput={(e) => {
+							const index = parseInt(e.target.value);
+							selectedYear = availableYears[index];
+						}}
+						class="time-slider h-4 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-400 transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
+					/>
+
+					<!-- Year range markers -->
+					<div class="mt-2 flex justify-between text-xs font-medium text-slate-500 sm:mt-1">
+						<span
+							class="rounded-md bg-slate-100 px-2 py-1 font-semibold sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal"
+						>
+							{availableYears[0]}
+						</span>
+						<span
+							class="rounded-md bg-slate-100 px-2 py-1 font-semibold sm:bg-transparent sm:px-0 sm:py-0 sm:font-normal"
+						>
+							{availableYears[availableYears.length - 1]}
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Animation Controls -->
+			<div class="space-y-3 sm:space-y-0">
+				<!-- Mobile: Stacked layout -->
+				<div class="flex gap-2 sm:hidden">
+					<!-- Play/Pause (Full width on mobile) -->
+					{#if !isPlaying}
+						<button
+							onclick={playAnimation}
+							disabled={availableYears.length < 2}
+							class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+								<path d="M8 5v14l11-7z" />
+							</svg>
+							<span>Play Animation</span>
+						</button>
+					{:else}
+						<button
+							onclick={stopAnimation}
+							class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95"
+						>
+							<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+								<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+							</svg>
+							<span>Stop Animation</span>
+						</button>
+					{/if}
+
+					<!-- Reset Button (Mobile) -->
+					<button
+						onclick={resetToFirstYear}
+						title="Reset to first year"
+						class="flex items-center justify-center rounded-xl bg-slate-600 px-4 py-3 text-white shadow-lg transition-all duration-200 hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none active:scale-95"
+					>
+						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+							/>
+						</svg>
+					</button>
+				</div>
+
+				<!-- Mobile: Info row -->
+				<div class="flex items-center justify-between rounded-lg bg-slate-50 p-3 sm:hidden">
+					<div class="flex items-center gap-2">
+						<svg
+							class="h-4 w-4 text-slate-500"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<span class="text-sm font-medium text-slate-600">Timeline Info</span>
+					</div>
+					<div class="text-right">
+						<div class="text-sm font-semibold text-slate-700">
+							{availableYears.length} years available
+						</div>
+						{#if isPlaying}
+							<div class="text-xs text-green-600">▶️ Playing (1.5s per year)</div>
+						{:else}
+							<div class="text-xs text-slate-500">⏸️ Paused</div>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Desktop: Horizontal layout -->
+				<div class="hidden items-center gap-2 sm:flex">
+					{#if !isPlaying}
+						<button
+							onclick={playAnimation}
+							class="flex items-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 focus:outline-none"
+							disabled={availableYears.length < 2}
+						>
+							<span>▶️</span>
+							<span>Play</span>
+						</button>
+					{:else}
+						<button
+							onclick={stopAnimation}
+							class="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-1 focus:outline-none"
+						>
+							<span>⏸️</span>
+							<span>Stop</span>
+						</button>
+					{/if}
+
+					<button
+						onclick={resetToFirstYear}
+						class="flex items-center gap-1 rounded bg-slate-600 px-2 py-1.5 text-sm text-white transition-colors hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-1 focus:outline-none"
+						title="Reset to first year"
+					>
+						<span>🔄</span>
+					</button>
+
+					<div class="ml-1 text-xs text-slate-600">
+						{availableYears.length} years
+					</div>
+				</div>
+			</div>
+
+			<!-- Animation status indicator (Mobile) -->
+			{#if isPlaying}
+				<div
+					class="mt-3 flex items-center justify-center gap-2 rounded-lg bg-green-50 p-2 sm:hidden"
+				>
+					<div class="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
+					<span class="text-sm font-medium text-green-700">Animation Playing</span>
+					<span class="text-xs text-green-600">(1.5s per year)</span>
+				</div>
+			{/if}
 		</div>
-		<span class="animate-pulse">🚀</span>
 	</div>
 </div>
 
 <style>
 	@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+	/* Enhanced mobile-friendly range slider */
+	.time-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 28px;
+		width: 28px;
+		border-radius: 50%;
+		background: #3b82f6;
+		border: 3px solid white;
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.time-slider::-webkit-slider-thumb:hover {
+		background: #2563eb;
+		transform: scale(1.1);
+		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+	}
+
+	.time-slider::-webkit-slider-thumb:active {
+		transform: scale(1.2);
+		box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+	}
+
+	.time-slider::-moz-range-thumb {
+		height: 28px;
+		width: 28px;
+		border-radius: 50%;
+		background: #3b82f6;
+		border: 3px solid white;
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		border: none;
+	}
+
+	.time-slider::-moz-range-thumb:hover {
+		background: #2563eb;
+		transform: scale(1.1);
+		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+	}
+
+	.time-slider::-moz-range-thumb:active {
+		transform: scale(1.2);
+		box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+	}
+
+	/* Desktop slider adjustments */
+	@media (min-width: 640px) {
+		.time-slider::-webkit-slider-thumb {
+			height: 20px;
+			width: 20px;
+		}
+
+		.time-slider::-moz-range-thumb {
+			height: 20px;
+			width: 20px;
+		}
+	}
+
+	/* Dark mode support */
+	@media (prefers-color-scheme: dark) {
+		.time-slider {
+			background: linear-gradient(to right, #1e40af, #1d4ed8);
+		}
+	}
+
+	/* Reduced motion support */
+	@media (prefers-reduced-motion: reduce) {
+		.time-slider::-webkit-slider-thumb,
+		.time-slider::-moz-range-thumb {
+			transition: none;
+		}
+
+		* {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+
+	/* High contrast mode */
+	@media (prefers-contrast: high) {
+		.time-slider::-webkit-slider-thumb {
+			border: 4px solid black;
+		}
+
+		.time-slider::-moz-range-thumb {
+			border: 4px solid black;
+		}
+	}
+
+	/* Focus styles for accessibility */
+	.time-slider:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px #3b82f6;
+	}
+
+	/* Touch-friendly hover states */
+	@media (hover: hover) {
+		button:hover {
+			transform: translateY(-1px);
+		}
+	}
 
 	:global(.leaflet-container) {
 		font-family: 'Inter', system-ui, sans-serif;
@@ -1124,6 +1687,94 @@
 		filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
 	}
 
+	/* Enhanced mobile-friendly range slider */
+	.range-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 24px;
+		width: 24px;
+		border-radius: 50%;
+		background: #3b82f6;
+		border: 3px solid white;
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.range-slider::-webkit-slider-thumb:hover {
+		background: #2563eb;
+		transform: scale(1.1);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+	}
+
+	.range-slider::-webkit-slider-thumb:active {
+		transform: scale(1.2);
+		box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+	}
+
+	.range-slider::-moz-range-thumb {
+		height: 24px;
+		width: 24px;
+		border-radius: 50%;
+		background: #3b82f6;
+		border: 3px solid white;
+		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+		cursor: pointer;
+		transition: all 0.2s ease;
+		border: none;
+	}
+
+	.range-slider::-moz-range-thumb:hover {
+		background: #2563eb;
+		transform: scale(1.1);
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+	}
+
+	.range-slider::-moz-range-thumb:active {
+		transform: scale(1.2);
+		box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+	}
+
+	/* Mobile-specific touch targets */
+	@media (max-width: 640px) {
+		.range-slider::-webkit-slider-thumb {
+			height: 28px;
+			width: 28px;
+		}
+
+		.range-slider::-moz-range-thumb {
+			height: 28px;
+			width: 28px;
+		}
+	}
+
+	/* Dark mode support */
+	@media (prefers-color-scheme: dark) {
+		.range-slider {
+			background: linear-gradient(to right, #1e40af, #1d4ed8);
+		}
+	}
+
+	/* Reduced motion support */
+	@media (prefers-reduced-motion: reduce) {
+		* {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+
+	/* High contrast mode */
+	@media (prefers-contrast: high) {
+		.range-slider::-webkit-slider-thumb {
+			border: 4px solid black;
+		}
+
+		.range-slider::-moz-range-thumb {
+			border: 4px solid black;
+		}
+	}
+
 	:global(::-webkit-scrollbar) {
 		width: 6px;
 	}
@@ -1145,42 +1796,6 @@
 	:global(*:focus) {
 		outline: 2px solid #3b82f6;
 		outline-offset: 2px;
-	}
-
-	/* Custom slider styles */
-	:global(.slider::-webkit-slider-thumb) {
-		appearance: none;
-		height: 20px;
-		width: 20px;
-		border-radius: 50%;
-		background: #3b82f6;
-		cursor: pointer;
-		border: 2px solid white;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-		transition: all 0.2s ease;
-	}
-
-	:global(.slider::-webkit-slider-thumb:hover) {
-		background: #2563eb;
-		transform: scale(1.1);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-	}
-
-	:global(.slider::-moz-range-thumb) {
-		height: 20px;
-		width: 20px;
-		border-radius: 50%;
-		background: #3b82f6;
-		cursor: pointer;
-		border: 2px solid white;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-		transition: all 0.2s ease;
-	}
-
-	:global(.slider::-moz-range-thumb:hover) {
-		background: #2563eb;
-		transform: scale(1.1);
-		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 	}
 
 	@media (max-width: 768px) {
