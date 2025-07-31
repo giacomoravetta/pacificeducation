@@ -172,7 +172,7 @@
 	<div bind:this={bubblesRef} class="absolute inset-0">
 		{#each bubbleData as bubble (bubble.id)}
 			<div
-				class="bubble absolute rounded-full will-change-transform"
+				class="bubble absolute rounded-full opacity-0 will-change-transform"
 				style:width="{bubble.size}px"
 				style:height="{bubble.size}px"
 				style:background="rgba(255, 255, 255, {bubble.opacity})"
