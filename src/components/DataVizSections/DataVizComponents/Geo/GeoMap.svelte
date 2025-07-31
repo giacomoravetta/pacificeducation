@@ -25,11 +25,6 @@
 		$props();
 
 	$effect(() => {
-		console.log('Filtered data updated:', $state.snapshot(filteredData));
-		console.log('Options state:', $state.snapshot(optionsState));
-	});
-
-	$effect(() => {
 		const hasValidSex = optionsState?.selectedSexes && optionsState.selectedSexes.length > 0;
 		const hasValidEducation =
 			optionsState?.selectedEducation && optionsState.selectedEducation.length > 0;
@@ -37,34 +32,12 @@
 
 		const newFiltersReady = hasValidSex && hasValidEducation && hasValidSkill;
 
-		console.log('Filter status detailed:', {
-			optionsState: optionsState,
-			sex: {
-				exists: !!optionsState?.selectedSexes,
-				values: optionsState?.selectedSexes,
-				valid: hasValidSex
-			},
-			education: {
-				exists: !!optionsState?.selectedEducation,
-				values: optionsState?.selectedEducation,
-				valid: hasValidEducation
-			},
-			skill: {
-				exists: !!optionsState?.selectedSkills,
-				values: optionsState?.selectedSkills,
-				valid: hasValidSkill
-			},
-			ready: newFiltersReady,
-			filteredDataLength: filteredData?.length || 0
-		});
-
 		filtersReady = newFiltersReady;
 	});
 
 	$effect(() => {
 		if (filtersReady && availableYears.length > 0 && selectedYear === null) {
 			selectedYear = availableYears[0];
-			console.log('Setting initial year to:', availableYears[0]);
 		}
 	});
 
@@ -74,7 +47,7 @@
 			years.add(row.TIME_PERIOD);
 		});
 		const yearArray = Array.from(years).sort((a, b) => a - b);
-		console.log('Available years from OBS_VALUE data:', yearArray);
+
 		return yearArray;
 	});
 
@@ -108,13 +81,6 @@
 			}
 		}
 
-		console.log(
-			'Pacific islands with OBS_VALUE data:',
-			islands.map((i) => ({
-				name: i.name,
-				rates: i.rates
-			}))
-		);
 		return islands;
 	});
 
@@ -138,7 +104,6 @@
 		const avgLng =
 			normalizedIslands.reduce((sum, island) => sum + island.lng, 0) / normalizedIslands.length;
 
-		console.log('🌏 Pacific center calculated:', [avgLat, avgLng]);
 		return [avgLat, avgLng];
 	}
 
@@ -663,8 +628,6 @@
 	function updateVisualization() {
 		if (!d3Overlay || !islandsRendered) return;
 
-		console.log('Updating visualization with', normalizedIslands.length, 'islands');
-
 		d3Overlay.selectAll('.island-group').each(function (island) {
 			const group = d3.select(this);
 			const data = getYearData(island, selectedYear);
@@ -763,7 +726,6 @@
 			g.attr('transform', `translate(${-topLeft.x},${-topLeft.y})`);
 
 			if (!islandsRendered && filtersReady && normalizedIslands.length > 0) {
-				console.log('Calling renderIslands from updateD3Overlay');
 				renderIslands();
 			} else if (islandsRendered) {
 				updatePositions();
@@ -779,8 +741,6 @@
 			console.log('Cannot render islands: no overlay or no data');
 			return;
 		}
-
-		console.log('Rendering', normalizedIslands.length, 'islands');
 
 		const islandGroups = d3Overlay
 			.selectAll('.island-group')
@@ -876,10 +836,6 @@
 
 	$effect(() => {
 		if (filteredData) {
-			console.log('Filtered data changed, length:', filteredData.length);
-			console.log('Islands rendered:', islandsRendered);
-			console.log('Filters ready:', filtersReady);
-
 			if (islandsRendered) {
 				console.log('Re-rendering islands due to data change');
 				stopAnimation();
@@ -895,13 +851,6 @@
 	});
 
 	$effect(() => {
-		console.log('Filter readiness effect:', {
-			filtersReady,
-			islandsRendered,
-			d3OverlayExists: !!d3Overlay,
-			normalizedIslandsLength: normalizedIslands.length
-		});
-
 		if (filtersReady && !islandsRendered && d3Overlay && normalizedIslands.length > 0) {
 			console.log('Triggering initial island rendering');
 			renderIslands();
@@ -909,15 +858,7 @@
 	});
 
 	$effect(() => {
-		console.log('Visualization update check:', {
-			islandsRendered,
-			filtersReady,
-			selectedYear,
-			normalizedIslandsLength: normalizedIslands.length
-		});
-
 		if (islandsRendered && filtersReady && selectedYear !== null) {
-			console.log('Updating visualization');
 			updateVisualization();
 		}
 	});

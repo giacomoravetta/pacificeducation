@@ -29,12 +29,10 @@
 						class="absolute -top-20 -right-20 size-40 rounded-full bg-gradient-to-br from-blue-400/20 to-transparent blur-3xl transition-all duration-500 group-hover:scale-110"
 					></div>
 					<p class="relative text-lg leading-relaxed text-white/90 lg:text-xl">
-						Across the vast expanse of the Pacific Ocean, from the coral atolls of
-						<span class="font-semibold text-cyan-300">Tuvalu</span> to the volcanic islands of
-						<span class="font-semibold text-cyan-300">Papua New Guinea</span>, millions of children
-						are building the fundamental skills that will shape their futures. Reading and
-						counting—the twin pillars of learning—hold the key to unlocking opportunities in island
-						communities where education must bridge traditional knowledge with global connectivity.
+						Across the vast expanse of the Pacific Ocean millions of children are building the
+						fundamental skills that will shape their futures. Reading and counting—the twin pillars
+						of learning—hold the key to unlocking opportunities in island communities where
+						education must bridge traditional knowledge with global connectivity.
 					</p>
 				</div>
 
@@ -171,28 +169,5 @@
 		50% {
 			transform: translateY(-15px) rotate(90deg);
 		}
-	}
-
-	.animate-float {
-		animation: float 6s ease-in-out infinite;
-	}
-
-	.animate-float-delayed {
-		animation: float-delayed 8s ease-in-out infinite;
-		animation-delay: -2s;
-	}
-
-	.animate-float-slow {
-		animation: float-slow 10s ease-in-out infinite;
-		animation-delay: -4s;
-	}
-
-	/* Grid pattern */
-	.bg-grid-white\/\[0\.02\] {
-		background-image: radial-gradient(circle, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-	}
-
-	.bg-grid-16 {
-		background-size: 16px 16px;
 	}
 </style>

@@ -166,8 +166,6 @@
 			return false;
 		}
 
-		console.log('Starting animation...');
-
 		const startX = -videoBox.width / 2;
 		const startY = innerHeight / 2;
 		const endX = innerWidth / 2 - videoBox.width / 2;
@@ -253,7 +251,6 @@
 
 				if (videoElement) {
 					if (videoElement.readyState >= 2) {
-						console.log('Video already loaded on mount');
 						isVideoLoaded = true;
 					}
 
