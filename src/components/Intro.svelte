@@ -271,7 +271,7 @@
 
 <svelte:window bind:innerWidth bind:innerHeight />
 
-<section class="relative flex min-h-screen w-full items-center justify-center">
+<section class="relative flex min-h-screen w-full flex-col items-center justify-center">
 	{#if showVideo && videoSrc}
 		<div class="absolute inset-0">
 			<video
@@ -340,7 +340,7 @@
 		onclick={() => {
 			handleClick('description');
 		}}
-		class="call-to-arrow absolute bottom-[10%] z-20 flex cursor-pointer justify-center opacity-0"
+		class="call-to-arrow relative bottom-[10%] z-20 flex cursor-pointer justify-center opacity-0"
 	>
 		<div
 			class="flex size-20 items-center justify-center rounded-full border-2 border-white/50 transition-all duration-300"
