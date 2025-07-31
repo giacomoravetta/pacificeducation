@@ -24,14 +24,57 @@
 	let { optionsState, filteredData, handleSkillToggle, handleEducationToggle, handleSexToggle } =
 		$props();
 
-	// Reactive computed values using $derived
+	$effect(() => {
+		console.log('Filtered data updated:', $state.snapshot(filteredData));
+		console.log('Options state:', $state.snapshot(optionsState));
+	});
+
+	$effect(() => {
+		const hasValidSex = optionsState?.selectedSexes && optionsState.selectedSexes.length > 0;
+		const hasValidEducation =
+			optionsState?.selectedEducation && optionsState.selectedEducation.length > 0;
+		const hasValidSkill = optionsState?.selectedSkills && optionsState.selectedSkills.length > 0;
+
+		const newFiltersReady = hasValidSex && hasValidEducation && hasValidSkill;
+
+		console.log('Filter status detailed:', {
+			optionsState: optionsState,
+			sex: {
+				exists: !!optionsState?.selectedSexes,
+				values: optionsState?.selectedSexes,
+				valid: hasValidSex
+			},
+			education: {
+				exists: !!optionsState?.selectedEducation,
+				values: optionsState?.selectedEducation,
+				valid: hasValidEducation
+			},
+			skill: {
+				exists: !!optionsState?.selectedSkills,
+				values: optionsState?.selectedSkills,
+				valid: hasValidSkill
+			},
+			ready: newFiltersReady,
+			filteredDataLength: filteredData?.length || 0
+		});
+
+		filtersReady = newFiltersReady;
+	});
+
+	$effect(() => {
+		if (filtersReady && availableYears.length > 0 && selectedYear === null) {
+			selectedYear = availableYears[0];
+			console.log('Setting initial year to:', availableYears[0]);
+		}
+	});
+
 	const availableYears = $derived.by(() => {
 		const years = new Set();
 		filteredData.forEach((row) => {
 			years.add(row.TIME_PERIOD);
 		});
 		const yearArray = Array.from(years).sort((a, b) => a - b);
-		console.log('📅 Available years calculated:', yearArray);
+		console.log('Available years from OBS_VALUE data:', yearArray);
 		return yearArray;
 	});
 
@@ -65,7 +108,13 @@
 			}
 		}
 
-		console.log('🏝️ Pacific islands calculated:', islands.length);
+		console.log(
+			'Pacific islands with OBS_VALUE data:',
+			islands.map((i) => ({
+				name: i.name,
+				rates: i.rates
+			}))
+		);
 		return islands;
 	});
 
@@ -79,55 +128,6 @@
 		}))
 	);
 
-	// Effects using $effect
-	$effect(() => {
-		const hasValidSex = optionsState?.selectedSexes && optionsState.selectedSexes.length > 0;
-		const hasValidEducation =
-			optionsState?.selectedEducation && optionsState.selectedEducation.length > 0;
-		const hasValidSkill = optionsState?.selectedSkills && optionsState.selectedSkills.length > 0;
-
-		const newFiltersReady = hasValidSex && hasValidEducation && hasValidSkill;
-		filtersReady = newFiltersReady;
-
-		console.log('🔧 Filters ready changed:', filtersReady);
-	});
-
-	$effect(() => {
-		if (filtersReady && availableYears.length > 0 && selectedYear === null) {
-			selectedYear = availableYears[0];
-			console.log('🎯 Auto-selected first year:', selectedYear);
-		}
-	});
-
-	$effect(() => {
-		if (filteredData) {
-			if (islandsRendered) {
-				console.log('🔄 Re-rendering islands due to data change');
-				stopAnimation();
-				selectedYear = null;
-				if (d3Overlay) {
-					d3Overlay.selectAll('.island-group').remove();
-					islandsRendered = false;
-				}
-			}
-		}
-	});
-
-	$effect(() => {
-		if (filtersReady && !islandsRendered && d3Overlay && normalizedIslands.length > 0) {
-			console.log('🎨 Triggering initial island rendering');
-			renderIslands();
-		}
-	});
-
-	// CRITICAL: This effect updates the visualization when selectedYear changes
-	$effect(() => {
-		if (islandsRendered && filtersReady && selectedYear !== null) {
-			console.log('🎯 Selected year changed, updating visualization:', selectedYear);
-			updateVisualization();
-		}
-	});
-
 	function getPacificCenter() {
 		if (normalizedIslands.length === 0) {
 			return [-15, 180];
@@ -138,6 +138,7 @@
 		const avgLng =
 			normalizedIslands.reduce((sum, island) => sum + island.lng, 0) / normalizedIslands.length;
 
+		console.log('🌏 Pacific center calculated:', [avgLat, avgLng]);
 		return [avgLat, avgLng];
 	}
 
@@ -154,53 +155,19 @@
 	}
 
 	function playAnimation() {
-		console.log('🎬 Starting animation...', {
-			availableYears: availableYears.length,
-			filtersReady,
-			currentYear: selectedYear,
-			islandsRendered,
-			normalizedIslands: normalizedIslands.length
-		});
-
-		if (availableYears.length === 0 || !filtersReady) {
-			console.warn('❌ Cannot start animation - no data or filters not ready');
-			return;
-		}
-
-		// Clear any existing interval first
-		if (playInterval) {
-			clearInterval(playInterval);
-			playInterval = null;
-		}
+		if (availableYears.length === 0 || !filtersReady) return;
 
 		isPlaying = true;
 		let currentIndex = availableYears.indexOf(parseInt(selectedYear));
 		if (currentIndex === -1) currentIndex = 0;
 
-		console.log(
-			'📍 Starting animation from index:',
-			currentIndex,
-			'year:',
-			availableYears[currentIndex]
-		);
-
 		playInterval = setInterval(() => {
 			currentIndex = (currentIndex + 1) % availableYears.length;
-			const newYear = availableYears[currentIndex];
-
-			console.log('⏭️ Animation step:', {
-				oldYear: selectedYear,
-				newYear: newYear,
-				index: currentIndex,
-				totalYears: availableYears.length
-			});
-
-			selectedYear = newYear;
+			selectedYear = availableYears[currentIndex];
 		}, 1500);
 	}
 
 	function stopAnimation() {
-		console.log('⏹️ Stopping animation');
 		isPlaying = false;
 		if (playInterval) {
 			clearInterval(playInterval);
@@ -209,29 +176,10 @@
 	}
 
 	function resetToFirstYear() {
-		console.log('🔄 Resetting to first year');
 		stopAnimation();
 		if (availableYears.length > 0) {
 			selectedYear = availableYears[0];
 		}
-	}
-
-	function handleRangeChange(e) {
-		const index = parseInt(e.target.value);
-		const newYear = availableYears[index];
-
-		console.log('🎚️ Range slider changed:', {
-			oldYear: selectedYear,
-			newYear: newYear,
-			index: index
-		});
-
-		// Stop animation if running
-		if (isPlaying) {
-			stopAnimation();
-		}
-
-		selectedYear = newYear;
 	}
 
 	function getLeafletPosition(island) {
@@ -248,7 +196,9 @@
 				.style('opacity', '0')
 				.on('end', function () {
 					mobileTooltip.remove();
+
 					document.body.style.overflow = '';
+
 					d3.select(window).on('keydown.mobile-tooltip', null);
 				});
 		}
@@ -323,6 +273,7 @@
 		const rankPosition = getRankPosition(data.rate);
 
 		const content = `
+
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 				<div style="display: flex; align-items: center; gap: 12px;">
 					<div style="width: 16px; height: 16px; background: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; border-radius: 50%; flex-shrink: 0;"></div>
@@ -336,11 +287,13 @@
 				</button>
 			</div>
 
+
 			<div style="text-align: center; padding: 24px; background: rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 20px; border: 2px solid ${optionsState.colorsIslands[island.name] || '#3b82f6'};">
 				<div style="font-size: 48px; font-weight: 900; color: ${optionsState.colorsIslands[island.name] || '#3b82f6'}; line-height: 1; margin-bottom: 8px;">${data.rate}%</div>
 				<div style="font-size: 16px; opacity: 0.9; font-weight: 600;">Literacy/Numeracy Rate</div>
 				<div style="font-size: 14px; opacity: 0.7; margin-top: 4px;">Year ${data.year}</div>
 			</div>
+
 
 			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
 				<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; text-align: center;">
@@ -355,12 +308,15 @@
 				</div>
 			</div>
 
+
 			<div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
 				<div style="font-weight: 600; margin-bottom: 8px; font-size: 16px;">${performance.icon} ${performance.label}</div>
 				<div style="font-size: 14px; opacity: 0.9; line-height: 1.5;">${getPerformanceDescription(data.rate)}</div>
 			</div>
 
+
 			${trend}
+
 
 			<div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
 				<div style="font-size: 12px; opacity: 0.6;">Tap outside to close</div>
@@ -618,7 +574,9 @@
 			hoverArea
 				.on('mouseenter touchstart', function (event) {
 					event.preventDefault();
+
 					column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
+
 					createMobileResponsiveTooltip(island, data, event);
 				})
 				.on('mouseleave', function () {
@@ -703,38 +661,17 @@
 	}
 
 	function updateVisualization() {
-		console.log('🎨 updateVisualization called:', {
-			d3Overlay: !!d3Overlay,
-			islandsRendered,
-			selectedYear,
-			filtersReady,
-			normalizedIslands: normalizedIslands.length
-		});
+		if (!d3Overlay || !islandsRendered) return;
 
-		if (!d3Overlay || !islandsRendered) {
-			console.warn('❌ Cannot update visualization - no overlay or islands not rendered');
-			return;
-		}
-
-		let updatedCount = 0;
+		console.log('Updating visualization with', normalizedIslands.length, 'islands');
 
 		d3Overlay.selectAll('.island-group').each(function (island) {
 			const group = d3.select(this);
 			const data = getYearData(island, selectedYear);
 			const hasData = data && data.rate > 0;
 
-			console.log(`🏝️ Updating ${island.name}:`, {
-				year: selectedYear,
-				data: data,
-				hasData: hasData,
-				allRates: Object.keys(island.rates)
-			});
-
 			createAnimatedColumns(group, island, data, hasData);
-			updatedCount++;
 		});
-
-		console.log(`✅ Updated ${updatedCount} islands for year ${selectedYear}`);
 	}
 
 	function updatePositions() {
@@ -826,6 +763,7 @@
 			g.attr('transform', `translate(${-topLeft.x},${-topLeft.y})`);
 
 			if (!islandsRendered && filtersReady && normalizedIslands.length > 0) {
+				console.log('Calling renderIslands from updateD3Overlay');
 				renderIslands();
 			} else if (islandsRendered) {
 				updatePositions();
@@ -842,7 +780,7 @@
 			return;
 		}
 
-		console.log('🎨 Rendering islands:', normalizedIslands.length);
+		console.log('Rendering', normalizedIslands.length, 'islands');
 
 		const islandGroups = d3Overlay
 			.selectAll('.island-group')
@@ -877,46 +815,23 @@
 				.style('cursor', 'pointer');
 
 			group
-				.on('mouseenter', function (event) {
-					if (!('ontouchstart' in window)) {
-						currentHover = island.name;
-						const currentData = getYearData(island, selectedYear);
-
-						const columnGroup = group.select('.column-system');
-						const column = columnGroup.select('.data-column');
-						if (!column.empty()) {
-							column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
-						}
-
-						if (currentData && currentData.rate > 0) {
-							createDesktopTooltip(island, currentData, event);
-						}
-					}
-				})
-				.on('touchstart', function (event) {
+				.on('mouseenter touchstart', function (event) {
 					event.preventDefault();
-					event.stopPropagation();
-
 					currentHover = island.name;
 					const currentData = getYearData(island, selectedYear);
 
-					if (currentData && currentData.rate > 0) {
-						createMobileModalTooltip(island, currentData);
+					const columnGroup = group.select('.column-system');
+					const column = columnGroup.select('.data-column');
+					if (!column.empty()) {
+						column.style('stroke-width', 2).style('filter', 'brightness(1.1)');
 					}
-				})
-				.on('click', function (event) {
-					if ('ontouchstart' in window) {
-						event.preventDefault();
-						event.stopPropagation();
 
-						const currentData = getYearData(island, selectedYear);
-						if (currentData && currentData.rate > 0) {
-							createMobileModalTooltip(island, currentData);
-						}
+					if (currentData && currentData.rate > 0) {
+						createMobileResponsiveTooltip(island, currentData, event);
 					}
 				})
 				.on('mouseleave', function () {
-					if (!('ontouchstart' in window)) {
+					if (window.innerWidth >= 768) {
 						currentHover = null;
 
 						const columnGroup = group.select('.column-system');
@@ -929,7 +844,7 @@
 					}
 				})
 				.on('mousemove', function (event) {
-					if (currentHover && !('ontouchstart' in window)) {
+					if (currentHover && window.innerWidth >= 768) {
 						d3.select('.column-tooltip')
 							.style('left', event.pageX + 15 + 'px')
 							.style('top', event.pageY - 10 + 'px');
@@ -958,6 +873,54 @@
 
 		document.body.style.overflow = '';
 	}
+
+	$effect(() => {
+		if (filteredData) {
+			console.log('Filtered data changed, length:', filteredData.length);
+			console.log('Islands rendered:', islandsRendered);
+			console.log('Filters ready:', filtersReady);
+
+			if (islandsRendered) {
+				console.log('Re-rendering islands due to data change');
+				stopAnimation();
+
+				selectedYear = null;
+
+				if (d3Overlay) {
+					d3Overlay.selectAll('.island-group').remove();
+					islandsRendered = false;
+				}
+			}
+		}
+	});
+
+	$effect(() => {
+		console.log('Filter readiness effect:', {
+			filtersReady,
+			islandsRendered,
+			d3OverlayExists: !!d3Overlay,
+			normalizedIslandsLength: normalizedIslands.length
+		});
+
+		if (filtersReady && !islandsRendered && d3Overlay && normalizedIslands.length > 0) {
+			console.log('Triggering initial island rendering');
+			renderIslands();
+		}
+	});
+
+	$effect(() => {
+		console.log('Visualization update check:', {
+			islandsRendered,
+			filtersReady,
+			selectedYear,
+			normalizedIslandsLength: normalizedIslands.length
+		});
+
+		if (islandsRendered && filtersReady && selectedYear !== null) {
+			console.log('Updating visualization');
+			updateVisualization();
+		}
+	});
 
 	onMount(() => {
 		if (browser) {
@@ -1022,10 +985,9 @@
 								</div>
 
 								<button
-									class="flex h-8 min-h-11 w-8 min-w-11 touch-manipulation items-center justify-center rounded-lg bg-slate-100 text-slate-600 select-none hover:bg-slate-200"
+									class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
 									onclick={() => (hiddenTime = true)}
 									aria-label="Close time controls"
-									style="-webkit-user-select: none; -webkit-touch-callout: none;"
 								>
 									<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path
@@ -1066,10 +1028,11 @@
 										min="0"
 										max={availableYears.length - 1}
 										value={availableYears.indexOf(parseInt(selectedYear))}
-										oninput={handleRangeChange}
-										onchange={handleRangeChange}
-										class="range-slider h-3 w-full cursor-pointer touch-manipulation appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-200 outline-none select-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
-										style="-webkit-user-select: none;"
+										oninput={(e) => {
+											const index = parseInt(e.target.value);
+											selectedYear = availableYears[index];
+										}}
+										class="range-slider h-3 w-full cursor-pointer appearance-none rounded-lg bg-gradient-to-r from-blue-200 to-blue-300 transition-all duration-200 outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:h-2"
 									/>
 
 									<div class="mt-2 flex justify-between text-xs font-medium text-slate-500">
@@ -1088,10 +1051,8 @@
 									{#if !isPlaying}
 										<button
 											onclick={playAnimation}
-											ontouchstart={playAnimation}
 											disabled={availableYears.length < 2}
-											class="flex min-h-11 min-w-11 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 select-none hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-3 sm:py-2"
-											style="-webkit-user-select: none; -webkit-touch-callout: none;"
+											class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none sm:px-3 sm:py-2"
 										>
 											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 												<path d="M8 5v14l11-7z" />
@@ -1101,9 +1062,7 @@
 									{:else}
 										<button
 											onclick={stopAnimation}
-											ontouchstart={stopAnimation}
-											class="flex min-h-11 min-w-11 flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 select-none hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:flex-none sm:px-3 sm:py-2"
-											style="-webkit-user-select: none; -webkit-touch-callout: none;"
+											class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:flex-none sm:px-3 sm:py-2"
 										>
 											<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
 												<path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
@@ -1114,10 +1073,8 @@
 
 									<button
 										onclick={resetToFirstYear}
-										ontouchstart={resetToFirstYear}
 										title="Reset to first year"
-										class="flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-xl bg-slate-600 px-4 py-3 text-white shadow-lg transition-all duration-200 select-none hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:px-3 sm:py-2"
-										style="-webkit-user-select: none; -webkit-touch-callout: none;"
+										class="flex items-center justify-center rounded-xl bg-slate-600 px-4 py-3 text-white shadow-lg transition-all duration-200 hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:outline-none active:scale-95 sm:px-3 sm:py-2"
 									>
 										<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path
@@ -1183,11 +1140,10 @@
 				</div>
 
 				<button
-					class="pointer-events-auto absolute bottom-4 left-4 flex min-h-11 min-w-11 touch-manipulation items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 select-none hover:bg-blue-700"
+					class="pointer-events-auto absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:bg-blue-700"
 					class:hidden={!hiddenTime}
 					onclick={() => (hiddenTime = false)}
 					aria-label="Show time controls"
-					style="-webkit-user-select: none; -webkit-touch-callout: none;"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -1258,27 +1214,6 @@
 <style>
 	@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
-	/* Improve touch targets for mobile with Tailwind 4 syntax */
-	button {
-		touch-action: manipulation;
-		-webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-
-		@media (width < 768px) {
-			min-height: 44px; /* Apple's recommended minimum touch target */
-			min-width: 44px;
-		}
-	}
-
-	.range-slider {
-		touch-action: manipulation;
-		-webkit-appearance: none;
-
-		@media (width < 768px) {
-			height: 44px !important; /* Larger touch target */
-			padding: 16px 0; /* Add padding for easier interaction */
-		}
-	}
-
 	.range-slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
@@ -1290,13 +1225,6 @@
 		box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 		cursor: pointer;
 		transition: all 0.2s ease;
-		touch-action: manipulation;
-
-		@media (width < 768px) {
-			height: 32px !important;
-			width: 32px !important;
-			margin-top: -12px; /* Center the thumb */
-		}
 	}
 
 	.range-slider::-webkit-slider-thumb:hover {
@@ -1320,12 +1248,6 @@
 		cursor: pointer;
 		transition: all 0.2s ease;
 		border: none;
-		touch-action: manipulation;
-
-		@media (width < 768px) {
-			height: 32px !important;
-			width: 32px !important;
-		}
 	}
 
 	.range-slider::-moz-range-thumb:hover {
@@ -1337,6 +1259,42 @@
 	.range-slider::-moz-range-thumb:active {
 		transform: scale(1.2);
 		box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+	}
+
+	@media (max-width: 640px) {
+		.range-slider::-webkit-slider-thumb {
+			height: 28px;
+			width: 28px;
+		}
+
+		.range-slider::-moz-range-thumb {
+			height: 28px;
+			width: 28px;
+		}
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.range-slider {
+			background: linear-gradient(to right, #1e40af, #1d4ed8);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		* {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+
+	@media (prefers-contrast: high) {
+		.range-slider::-webkit-slider-thumb {
+			border: 4px solid black;
+		}
+
+		.range-slider::-moz-range-thumb {
+			border: 4px solid black;
+		}
 	}
 
 	:global(.leaflet-container) {
@@ -1400,29 +1358,5 @@
 
 	:global(::-webkit-scrollbar-thumb:hover) {
 		background: rgba(148, 163, 184, 0.9);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.range-slider {
-			background: linear-gradient(to right, #1e40af, #1d4ed8);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		* {
-			animation-duration: 0.01ms !important;
-			animation-iteration-count: 1 !important;
-			transition-duration: 0.01ms !important;
-		}
-	}
-
-	@media (prefers-contrast: high) {
-		.range-slider::-webkit-slider-thumb {
-			border: 4px solid black;
-		}
-
-		.range-slider::-moz-range-thumb {
-			border: 4px solid black;
-		}
 	}
 </style>
