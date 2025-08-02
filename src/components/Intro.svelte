@@ -32,8 +32,14 @@
 	}
 
 	function setVideoSource(): void {
-		// Only set video source on desktop
 		if (!desktopQuery.current) {
+			isDesktop = false;
+			videoSrc = '';
+			return;
+		}
+
+		const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+		if (isFirefox) {
 			isDesktop = false;
 			videoSrc = '';
 			return;
