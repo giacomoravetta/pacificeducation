@@ -3,19 +3,30 @@
 	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
 
-	// State variables using $state rune
 	let innerWidth = $state<number>();
 	let innerHeight = $state<number>();
 	let videoBox = $state<DOMRectReadOnly>();
 	let isVideoLoaded = $state(false);
-	let showVideo = $state(true);
+	let showVideo = $state(false);
 	let videoSrc = $state('/Turtle.mov');
-	// Derived values using $derived rune
+
 	const isReadyForAnimation = $derived(
 		showVideo && isVideoLoaded && videoBox?.width && innerWidth && innerHeight
 	);
 
 	gsap.registerPlugin(ScrollToPlugin);
+
+	function shouldDisableVideo(): boolean {
+		const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+
+		const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+		const isSmallScreen = window.innerWidth <= 768;
+
+		return isMobileUA || (isTouchDevice && isSmallScreen);
+	}
 
 	function handleClick(section: string): void {
 		gsap.to(window, {
@@ -178,8 +189,21 @@
 	});
 
 	onMount(() => {
+		// Check if we should show video (desktop only)
+		const shouldShowVideo = !shouldDisableVideo();
+
+		// Debug logging (remove in production)
+		console.log('User Agent:', navigator.userAgent);
+		console.log('Touch Device:', 'ontouchstart' in window);
+		console.log('Screen Width:', window.innerWidth);
+		console.log('Should Show Video:', shouldShowVideo);
+
+		showVideo = shouldShowVideo;
+
+		// Always show arrow animation
 		const arrowTimeout = setTimeout(createArrowAnimation, 500);
 
+		// Only proceed with video setup if we're showing video
 		if (showVideo && videoSrc) {
 			preloadVideo();
 
@@ -200,21 +224,25 @@
 			return () => {
 				clearTimeout(arrowTimeout);
 				clearTimeout(videoTimeout);
+
+				// Cleanup animations
+				if (animationTimeline) {
+					animationTimeline.kill();
+				}
+				gsap.killTweensOf('.turtle-video');
+				gsap.killTweensOf('.call-to-arrow');
+				gsap.killTweensOf('.call-to-arrow svg');
+				gsap.killTweensOf('.call-to-arrow > div');
+			};
+		} else {
+			// No video, just clean up arrow animation
+			return () => {
+				clearTimeout(arrowTimeout);
+				gsap.killTweensOf('.call-to-arrow');
+				gsap.killTweensOf('.call-to-arrow svg');
+				gsap.killTweensOf('.call-to-arrow > div');
 			};
 		}
-
-		return () => {
-			clearTimeout(arrowTimeout);
-
-			// Cleanup animations
-			if (animationTimeline) {
-				animationTimeline.kill();
-			}
-			gsap.killTweensOf('.turtle-video');
-			gsap.killTweensOf('.call-to-arrow');
-			gsap.killTweensOf('.call-to-arrow svg');
-			gsap.killTweensOf('.call-to-arrow > div');
-		};
 	});
 </script>
 
