@@ -17,17 +17,26 @@
 	gsap.registerPlugin(ScrollToPlugin);
 
 	function shouldDisableVideo(): boolean {
-		const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-			navigator.userAgent
-		);
+		const isMobileUA =
+			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(
+				navigator.userAgent
+			);
 
 		const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-		const isSmallScreen = window.innerWidth <= 768;
+		const isSmallScreen = window.innerWidth <= 1024;
+		const isPortrait = window.innerHeight > window.innerWidth;
 
-		return isMobileUA || (isTouchDevice && isSmallScreen);
+		const isMobileBrowser = /Mobi|Android/i.test(navigator.userAgent);
+
+		const isTablet =
+			/iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) ||
+			(isTouchDevice && window.innerWidth >= 768 && window.innerWidth <= 1024);
+
+		return (
+			isMobileUA || isMobileBrowser || isTablet || (isTouchDevice && (isSmallScreen || isPortrait))
+		);
 	}
-
 	function handleClick(section: string): void {
 		gsap.to(window, {
 			duration: 2,
