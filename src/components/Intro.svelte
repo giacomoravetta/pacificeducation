@@ -3,90 +3,39 @@
 	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
 
-	let innerWidth = $state();
-	let innerHeight = $state();
-	let videoBox = $state();
+	// State variables using $state rune
+	let innerWidth = $state<number>();
+	let innerHeight = $state<number>();
+	let videoBox = $state<DOMRectReadOnly>();
 	let isVideoLoaded = $state(false);
-	let isAnimationRunning = $state(false);
-
-	let isSafari = $state(false);
-	let isMobile = $state(false);
-	let isSlowDevice = $state(false);
 	let showVideo = $state(true);
-	let videoSrc = $state('');
-
-	let connectionSpeed = $state('unknown');
-	let deviceMemory = $state(4);
-
-	function detectDevice() {
-		const userAgent = navigator.userAgent.toLowerCase();
-
-		const isSafariBrowser =
-			userAgent.includes('safari') &&
-			!userAgent.includes('chrome') &&
-			!userAgent.includes('chromium') &&
-			!userAgent.includes('edg');
-
-		const isMobileDevice =
-			/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
-			window.innerWidth <= 768;
-
-		const connection =
-			navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-		let effectiveType = 'unknown';
-		let estimatedMemory = 4;
-
-		if (connection) {
-			effectiveType = connection.effectiveType || 'unknown';
-		}
-
-		if (navigator.deviceMemory) {
-			estimatedMemory = navigator.deviceMemory;
-		}
-
-		const isDeviceSlow =
-			estimatedMemory <= 2 ||
-			effectiveType === 'slow-2g' ||
-			effectiveType === '2g' ||
-			(isMobileDevice && estimatedMemory <= 4);
-
-		isSafari = isSafariBrowser;
-		isMobile = isMobileDevice;
-		isSlowDevice = isDeviceSlow;
-		connectionSpeed = effectiveType;
-		deviceMemory = estimatedMemory;
-
-		if (isSafariBrowser) {
-			showVideo = false;
-			videoSrc = '';
-		} else {
-			showVideo = true;
-			videoSrc = '/Turtle.webm';
-		}
-
-		return { isSafariBrowser, isMobileDevice, isDeviceSlow };
-	}
+	let videoSrc = $state('/Turtle.mov');
+	// Derived values using $derived rune
+	const isReadyForAnimation = $derived(
+		showVideo && isVideoLoaded && videoBox?.width && innerWidth && innerHeight
+	);
 
 	gsap.registerPlugin(ScrollToPlugin);
 
-	const handleClick = (section: string) => {
+	function handleClick(section: string): void {
 		gsap.to(window, {
 			duration: 2,
 			scrollTo: `#${section}`,
 			ease: 'power2.inOut'
 		});
-	};
+	}
 
-	const tl = gsap.timeline();
+	function createArrowAnimation(): void {
+		const arrowSelector = '.call-to-arrow';
+		const arrowSvgSelector = '.call-to-arrow svg';
 
-	function createArrowAnimation() {
-		gsap.set('.call-to-arrow', {
+		gsap.set(arrowSelector, {
 			opacity: 0,
 			scale: 0.9,
 			y: 20
 		});
 
-		gsap.to('.call-to-arrow', {
+		gsap.to(arrowSelector, {
 			opacity: 1,
 			scale: 1,
 			y: 0,
@@ -94,7 +43,7 @@
 			ease: 'back.out(1.2)'
 		});
 
-		gsap.to('.call-to-arrow', {
+		gsap.to(arrowSelector, {
 			y: -12,
 			duration: 3,
 			ease: 'sine.inOut',
@@ -103,7 +52,7 @@
 			delay: 4
 		});
 
-		gsap.to('.call-to-arrow', {
+		gsap.to(arrowSelector, {
 			scale: 1.1,
 			duration: 4,
 			ease: 'sine.inOut',
@@ -112,7 +61,7 @@
 			delay: 3
 		});
 
-		gsap.to('.call-to-arrow svg', {
+		gsap.to(arrowSvgSelector, {
 			y: -4,
 			duration: 2,
 			ease: 'sine.inOut',
@@ -121,7 +70,7 @@
 			delay: 4.5
 		});
 
-		gsap.to('.call-to-arrow svg', {
+		gsap.to(arrowSvgSelector, {
 			rotation: 3,
 			duration: 6,
 			ease: 'sine.inOut',
@@ -130,45 +79,39 @@
 			delay: 5
 		});
 
-		const arrowElement = document.querySelector('.call-to-arrow');
-		if (arrowElement) {
-			arrowElement.addEventListener('click', () => {
-				gsap.to('.call-to-arrow', {
-					scale: 0.95,
-					duration: 0.1,
-					ease: 'power2.out',
-					yoyo: true,
-					repeat: 1
-				});
-
-				gsap.fromTo(
-					'.call-to-arrow > div',
-					{
-						boxShadow: '0 0 0px rgba(255, 255, 255, 0.8)'
-					},
-					{
-						boxShadow: '0 0 60px rgba(255, 255, 255, 0)',
-						duration: 0.6,
-						ease: 'power2.out'
-					}
-				);
+		const arrowElement = document.querySelector(arrowSelector);
+		arrowElement?.addEventListener('click', () => {
+			gsap.to(arrowSelector, {
+				scale: 0.95,
+				duration: 0.1,
+				ease: 'power2.out',
+				yoyo: true,
+				repeat: 1
 			});
-		}
+
+			gsap.fromTo(
+				'.call-to-arrow > div',
+				{ boxShadow: '0 0 0px rgba(255, 255, 255, 0.8)' },
+				{
+					boxShadow: '0 0 60px rgba(255, 255, 255, 0)',
+					duration: 0.6,
+					ease: 'power2.out'
+				}
+			);
+		});
 	}
 
-	function startAnimation(tl) {
-		if (!showVideo) return false;
-
+	function startAnimation(): gsap.core.Timeline {
 		if (!videoBox?.width || !innerWidth || !innerHeight) {
-			return false;
+			return gsap.timeline();
 		}
 
 		const startX = -videoBox.width / 2;
 		const startY = innerHeight / 2;
 		const endX = innerWidth / 2 - videoBox.width / 2;
+		const endY = innerHeight / 2 - videoBox.height / 2;
 
-		const animationDuration = isMobile ? 20 : 40;
-		const scaleFactor = isMobile ? 0.8 : 1.3;
+		const tl = gsap.timeline();
 
 		tl.fromTo(
 			'.turtle-video',
@@ -180,88 +123,94 @@
 			},
 			{
 				x: endX,
-				y: innerHeight / 2 - videoBox.height / 2,
-				scale: scaleFactor,
+				y: endY,
+				scale: 1.3,
 				opacity: 1,
-				duration: animationDuration,
+				duration: 40,
 				ease: 'sine.out'
 			}
 		).to('.turtle-video', {
 			x: endX,
-			y: innerHeight / 2 - videoBox.height / 2,
-			scale: isMobile ? 0.3 : 0.4,
+			y: endY,
+			scale: 0.4,
 			opacity: 1,
-			duration: isMobile ? 15 : 30,
+			duration: 30,
 			repeat: -1,
 			yoyo: true,
 			ease: 'power2.inOut'
 		});
 
-		isAnimationRunning = true;
-		return true;
+		return tl;
 	}
 
-	function handleVideoLoad() {
+	function handleVideoLoad(): void {
 		isVideoLoaded = true;
 	}
 
-	function handleVideoError(event) {
+	function handleVideoError(event: Event): void {
 		console.error('Video failed to load:', event);
-		showVideo = false;
-		videoSrc = '';
-	}
 
-	function preloadVideo() {
-		if (!showVideo || !videoSrc) return;
-
-		const video = document.createElement('video');
-		video.preload = 'metadata';
-		video.src = videoSrc;
-
-		if (connectionSpeed === '4g' || (!isMobile && deviceMemory > 4)) {
-			video.preload = 'auto';
+		if (videoSrc === '/Turtle.mov') {
+			console.log('MOV video failed, trying WebM fallback');
+			videoSrc = '/Turtle.webm';
+		} else {
+			showVideo = false;
+			videoSrc = '';
 		}
 	}
 
+	function preloadVideo(): void {
+		if (!showVideo || !videoSrc) return;
+
+		const video = document.createElement('video');
+		video.preload = 'auto';
+		video.src = videoSrc;
+	}
+
+	// Animation timeline variable
+	let animationTimeline: gsap.core.Timeline;
+
+	// Effect to handle animation when video is ready
 	$effect(() => {
-		if (showVideo && videoSrc) {
-			if (isVideoLoaded && videoBox?.width && innerWidth && innerHeight) {
-				startAnimation(tl);
-			}
+		if (isReadyForAnimation) {
+			animationTimeline = startAnimation();
 		}
 	});
 
 	onMount(() => {
-		detectDevice();
-
-		setTimeout(() => {
-			createArrowAnimation();
-		}, 500);
+		const arrowTimeout = setTimeout(createArrowAnimation, 500);
 
 		if (showVideo && videoSrc) {
 			preloadVideo();
 
-			setTimeout(() => {
+			const videoTimeout = setTimeout(() => {
 				const videoElement = document.querySelector('.turtle-video') as HTMLVideoElement;
 
 				if (videoElement) {
-					if (videoElement.readyState >= 2) {
+					if (videoElement.readyState >= 3) {
 						isVideoLoaded = true;
 					}
 
+					videoElement.addEventListener('canplaythrough', handleVideoLoad);
 					videoElement.addEventListener('loadeddata', handleVideoLoad);
-					videoElement.addEventListener('canplay', handleVideoLoad);
 					videoElement.addEventListener('error', handleVideoError);
 				}
 			}, 100);
+
+			return () => {
+				clearTimeout(arrowTimeout);
+				clearTimeout(videoTimeout);
+			};
 		}
 
 		return () => {
-			if (showVideo) {
-				gsap.killTweensOf('.turtle-video');
-				tl.clear();
-			}
+			clearTimeout(arrowTimeout);
 
+			// Cleanup animations
+			if (animationTimeline) {
+				animationTimeline.kill();
+			}
+			gsap.killTweensOf('.turtle-video');
 			gsap.killTweensOf('.call-to-arrow');
 			gsap.killTweensOf('.call-to-arrow svg');
 			gsap.killTweensOf('.call-to-arrow > div');
@@ -281,13 +230,16 @@
 				loop
 				muted
 				playsinline
-				preload={isMobile ? 'metadata' : 'auto'}
+				preload="auto"
 				class="turtle-video absolute origin-center opacity-0"
 				onloadeddata={handleVideoLoad}
 				onerror={handleVideoError}
 				style="will-change: transform; transform: translateZ(0);"
 			>
-				<source src={videoSrc} type="video/webm" />
+				<source
+					src={videoSrc}
+					type={videoSrc.endsWith('.webm') ? 'video/webm' : 'video/quicktime'}
+				/>
 				<track kind="captions" />
 			</video>
 		</div>
@@ -337,9 +289,7 @@
 
 	<button
 		aria-label="Button to next section"
-		onclick={() => {
-			handleClick('description');
-		}}
+		onclick={() => handleClick('description')}
 		class="call-to-arrow relative bottom-[10%] z-20 flex cursor-pointer justify-center opacity-0"
 	>
 		<div
