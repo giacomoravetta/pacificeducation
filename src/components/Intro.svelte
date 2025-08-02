@@ -2,41 +2,55 @@
 	import { gsap } from 'gsap';
 	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 
-	let innerWidth = $state<number>();
-	let innerHeight = $state<number>();
 	let videoBox = $state<DOMRectReadOnly>();
 	let isVideoLoaded = $state(false);
-	let showVideo = $state(false);
-	let videoSrc = $state('/Turtle.mov');
+	let videoSrc = $state('');
+	let isDesktop = $state(false);
 
-	const isReadyForAnimation = $derived(
-		showVideo && isVideoLoaded && videoBox?.width && innerWidth && innerHeight
-	);
+	const desktopQuery = new MediaQuery('(min-width: 1024px)');
+
+	const shouldShowVideo = $derived(desktopQuery.current && isDesktop && videoSrc);
+	const isReadyForAnimation = $derived(shouldShowVideo && isVideoLoaded && videoBox?.width);
 
 	gsap.registerPlugin(ScrollToPlugin);
 
-	function shouldDisableVideo(): boolean {
-		const isMobileUA =
-			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(
-				navigator.userAgent
-			);
+	function detectVideoSupport(): {
+		supportsTransparentMOV: boolean;
+		supportsTransparentWebM: boolean;
+	} {
+		const video = document.createElement('video');
 
-		const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		const supportsTransparentMOV = video.canPlayType('video/quicktime') !== '';
 
-		const isSmallScreen = window.innerWidth <= 1024;
-		const isPortrait = window.innerHeight > window.innerWidth;
+		const supportsTransparentWebM =
+			video.canPlayType('video/webm; codecs="vp8"') !== '' ||
+			video.canPlayType('video/webm; codecs="vp9"') !== '';
 
-		const isMobileBrowser = /Mobi|Android/i.test(navigator.userAgent);
-
-		const isTablet =
-			/iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) ||
-			(isTouchDevice && window.innerWidth >= 768 && window.innerWidth <= 1024);
-
-		return (
-			isMobileUA || isMobileBrowser || isTablet || (isTouchDevice && (isSmallScreen || isPortrait))
-		);
+		return { supportsTransparentMOV, supportsTransparentWebM };
 	}
+
+	function setVideoSource(): void {
+		// Only set video source on desktop
+		if (!desktopQuery.current) {
+			isDesktop = false;
+			videoSrc = '';
+			return;
+		}
+
+		isDesktop = true;
+		const { supportsTransparentMOV, supportsTransparentWebM } = detectVideoSupport();
+
+		if (supportsTransparentMOV) {
+			videoSrc = '/Turtle.mov';
+		} else if (supportsTransparentWebM) {
+			videoSrc = '/Turtle.webm';
+		} else {
+			videoSrc = '/Turtle.webm';
+		}
+	}
+
 	function handleClick(section: string): void {
 		gsap.to(window, {
 			duration: 2,
@@ -122,14 +136,14 @@
 	}
 
 	function startAnimation(): gsap.core.Timeline {
-		if (!videoBox?.width || !innerWidth || !innerHeight) {
+		if (!videoBox?.width || !desktopQuery.current) {
 			return gsap.timeline();
 		}
 
 		const startX = -videoBox.width / 2;
-		const startY = innerHeight / 2;
-		const endX = innerWidth / 2 - videoBox.width / 2;
-		const endY = innerHeight / 2 - videoBox.height / 2;
+		const startY = window.innerHeight / 2;
+		const endX = window.innerWidth / 2 - videoBox.width / 2;
+		const endY = window.innerHeight / 2 - videoBox.height / 2;
 
 		const tl = gsap.timeline();
 
@@ -170,50 +184,45 @@
 	function handleVideoError(event: Event): void {
 		console.error('Video failed to load:', event);
 
-		if (videoSrc === '/Turtle.mov') {
+		if (videoSrc.endsWith('.mov')) {
 			console.log('MOV video failed, trying WebM fallback');
 			videoSrc = '/Turtle.webm';
 		} else {
-			showVideo = false;
+			console.log('WebM video also failed, disabling video');
 			videoSrc = '';
+			isDesktop = false;
 		}
 	}
 
 	function preloadVideo(): void {
-		if (!showVideo || !videoSrc) return;
+		if (!shouldShowVideo || !videoSrc) return;
 
 		const video = document.createElement('video');
 		video.preload = 'auto';
 		video.src = videoSrc;
 	}
 
-	// Animation timeline variable
 	let animationTimeline: gsap.core.Timeline;
 
-	// Effect to handle animation when video is ready
+	$effect(() => {
+		const isCurrentlyDesktop = desktopQuery.current;
+		if (isCurrentlyDesktop !== isDesktop) {
+			setVideoSource();
+		}
+	});
+
 	$effect(() => {
 		if (isReadyForAnimation) {
 			animationTimeline = startAnimation();
 		}
 	});
 
-	onMount(() => {
-		// Check if we should show video (desktop only)
-		const shouldShowVideo = !shouldDisableVideo();
+	onMount(async () => {
+		setVideoSource();
 
-		// Debug logging (remove in production)
-		console.log('User Agent:', navigator.userAgent);
-		console.log('Touch Device:', 'ontouchstart' in window);
-		console.log('Screen Width:', window.innerWidth);
-		console.log('Should Show Video:', shouldShowVideo);
-
-		showVideo = shouldShowVideo;
-
-		// Always show arrow animation
 		const arrowTimeout = setTimeout(createArrowAnimation, 500);
 
-		// Only proceed with video setup if we're showing video
-		if (showVideo && videoSrc) {
+		if (shouldShowVideo && videoSrc) {
 			preloadVideo();
 
 			const videoTimeout = setTimeout(() => {
@@ -233,32 +242,26 @@
 			return () => {
 				clearTimeout(arrowTimeout);
 				clearTimeout(videoTimeout);
-
-				// Cleanup animations
-				if (animationTimeline) {
-					animationTimeline.kill();
-				}
-				gsap.killTweensOf('.turtle-video');
-				gsap.killTweensOf('.call-to-arrow');
-				gsap.killTweensOf('.call-to-arrow svg');
-				gsap.killTweensOf('.call-to-arrow > div');
-			};
-		} else {
-			// No video, just clean up arrow animation
-			return () => {
-				clearTimeout(arrowTimeout);
-				gsap.killTweensOf('.call-to-arrow');
-				gsap.killTweensOf('.call-to-arrow svg');
-				gsap.killTweensOf('.call-to-arrow > div');
 			};
 		}
+
+		return () => {
+			clearTimeout(arrowTimeout);
+
+			// Cleanup animations
+			if (animationTimeline) {
+				animationTimeline.kill();
+			}
+			gsap.killTweensOf('.turtle-video');
+			gsap.killTweensOf('.call-to-arrow');
+			gsap.killTweensOf('.call-to-arrow svg');
+			gsap.killTweensOf('.call-to-arrow > div');
+		};
 	});
 </script>
 
-<svelte:window bind:innerWidth bind:innerHeight />
-
 <section class="relative flex min-h-screen w-full flex-col items-center justify-center">
-	{#if showVideo && videoSrc}
+	{#if shouldShowVideo && videoSrc}
 		<div class="absolute inset-0">
 			<video
 				bind:contentRect={videoBox}
@@ -267,6 +270,7 @@
 				loop
 				muted
 				playsinline
+				webkit-playsinline="true"
 				preload="auto"
 				class="turtle-video absolute origin-center opacity-0"
 				onloadeddata={handleVideoLoad}
