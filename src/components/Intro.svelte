@@ -61,19 +61,23 @@
 			return;
 		}
 
-		const { supportsTransparentMOV, supportsTransparentWebM } = detectVideoSupport();
-
-		if (isSafari() && supportsTransparentMOV) {
+		if (isSafari()) {
 			showVideo = true;
 			videoSrc = '/Turtle.mov';
-		} else if (isChromeBasedBrowser() && supportsTransparentWebM) {
+			return;
+		}
+
+		const { supportsTransparentWebM } = detectVideoSupport();
+
+		if (isChromeBasedBrowser() && supportsTransparentWebM) {
 			showVideo = true;
 			videoSrc = '/Turtle.webm';
 		} else if (supportsTransparentWebM) {
 			showVideo = true;
 			videoSrc = '/Turtle.webm';
 		} else {
-			showVideo = false;
+			showVideo = true;
+			videoSrc = '/Turtle.mov';
 		}
 	}
 
