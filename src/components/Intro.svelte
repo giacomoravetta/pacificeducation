@@ -2,17 +2,12 @@
 	import { gsap } from 'gsap';
 	import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 	import { onMount } from 'svelte';
-	import { MediaQuery } from 'svelte/reactivity';
 
 	let videoBox = $state<DOMRectReadOnly>();
 
 	let videoSrc = $state('');
 	let showVideo = $state(false);
-
 	let isVideoLoaded = $state(false);
-
-	const desktopQuery = new MediaQuery('(min-width: 1024px)');
-	const mobileQuery = new MediaQuery('(max-width: 1023px)');
 
 	const shouldShowVideo = $derived(videoSrc && showVideo);
 
@@ -31,6 +26,15 @@
 			video.canPlayType('video/webm; codecs="vp9"') !== '';
 
 		return { supportsTransparentMOV, supportsTransparentWebM };
+	}
+
+	function isSafari(): boolean {
+		const userAgent = navigator.userAgent.toLowerCase();
+		return (
+			userAgent.includes('safari') &&
+			!userAgent.includes('chrome') &&
+			!userAgent.includes('firefox')
+		);
 	}
 
 	function isChromeBasedBrowser(): boolean {
@@ -52,26 +56,22 @@
 
 		const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 		if (isFirefox) {
-			return; // No video for Firefox
+			return;
 		}
 
 		const { supportsTransparentMOV, supportsTransparentWebM } = detectVideoSupport();
 
-		// Desktop: prefer MOV, fallback to WebM
-		if (desktopQuery.current) {
+		if (isSafari() && supportsTransparentMOV) {
 			showVideo = true;
-			if (supportsTransparentMOV) {
-				videoSrc = '/Turtle.mov';
-			} else if (supportsTransparentWebM) {
-				videoSrc = '/Turtle.webm';
-			} else {
-				videoSrc = '/Turtle.webm'; // Fallback
-			}
-		}
-		// Mobile: only show WebM on Chrome-based browsers
-		else if (mobileQuery.current && isChromeBasedBrowser() && supportsTransparentWebM) {
+			videoSrc = '/Turtle.mov';
+		} else if (isChromeBasedBrowser() && supportsTransparentWebM) {
 			showVideo = true;
 			videoSrc = '/Turtle.webm';
+		} else if (supportsTransparentWebM) {
+			showVideo = true;
+			videoSrc = '/Turtle.webm';
+		} else {
+			showVideo = false;
 		}
 	}
 
@@ -169,14 +169,12 @@
 		const endX = window.innerWidth / 2 - videoBox.width / 2;
 		const endY = window.innerHeight / 2 - videoBox.height / 2;
 
-		// Kill any existing timeline to prevent restarts
 		if (animationTimeline) {
 			animationTimeline.kill();
 		}
 
 		const tl = gsap.timeline();
 
-		// Initial entrance animation
 		tl.fromTo(
 			'.turtle-video',
 			{
@@ -193,25 +191,12 @@
 				duration: 40,
 				ease: 'sine.out'
 			}
-		);
-
-		// Breathing/floating animation - separate timeline to prevent conflicts
-		const breathingTl = gsap.timeline({
-			repeat: -1,
-			yoyo: true,
-			paused: true // Start paused
-		});
-
-		breathingTl.to('.turtle-video', {
+		).to('.turtle-video', {
 			scale: 0.4,
 			duration: 30,
+			repeat: -1,
+			yoyo: true,
 			ease: 'power2.inOut'
-		});
-
-		// Start the breathing animation when the initial animation completes
-		tl.call(() => {
-			breathingTimeline = breathingTl;
-			breathingTl.play();
 		});
 
 		return tl;
@@ -230,29 +215,13 @@
 		}
 	}
 
-	// This will be called when the video can play through without stopping
 	function handleVideoCanPlayThrough(): void {
 		if (!isVideoLoaded) {
-			console.log('Video fully loaded and ready to play');
 			animationTimeline = startAnimation();
-			isVideoLoaded = true;
 		}
 	}
 
 	let animationTimeline: gsap.core.Timeline;
-	let breathingTimeline: gsap.core.Timeline;
-
-	$effect(() => {
-		if (desktopQuery.current || mobileQuery.current) {
-			if (animationTimeline) {
-				animationTimeline.kill();
-			}
-			if (breathingTimeline) {
-				breathingTimeline.kill();
-			}
-			setVideoSource();
-		}
-	});
 
 	onMount(async () => {
 		setVideoSource();
@@ -275,11 +244,15 @@
 				class="turtle-video absolute origin-center opacity-0"
 				oncanplaythrough={handleVideoCanPlayThrough}
 				onerror={handleVideoError}
-				style="will-change: transform; transform: translateZ(0);"
+				style="will-change: transform; transform: translateZ(0); background: transparent;"
 			>
 				<source
 					src={videoSrc}
-					type={videoSrc.endsWith('.webm') ? 'video/webm' : 'video/quicktime'}
+					type={videoSrc.endsWith('.webm')
+						? 'video/webm'
+						: videoSrc.endsWith('.mov')
+							? 'video/quicktime; codecs="hvc1"'
+							: 'video/mp4; codecs="hvc1"'}
 				/>
 				<track kind="captions" />
 			</video>
@@ -301,7 +274,7 @@
 				Interactive Data Exploration
 			</div>
 			<div class="mb-8">
-				<h1 class="mb-4 text-5xl leading-tight font-bold text-white lg:text-7xl">
+				<h1 class="mb-4 text-[min(28px,34px)] leading-tight font-bold text-white lg:text-7xl">
 					<span
 						class="animate-gradient-x inline-block bg-linear-to-r from-yellow-300 via-orange-400 to-red-400 bg-clip-text text-transparent"
 					>
@@ -314,12 +287,12 @@
 						Across the Pacific
 					</span>
 				</h1>
-				<p class="text-xl font-light tracking-wide text-blue-100 lg:text-2xl">
+				<p class="text-[min(22px,34px)] font-light tracking-wide text-blue-100 lg:text-2xl">
 					Mapping Essential Skills in Island Communities
 				</p>
 			</div>
 			<div class="mb-12 space-y-6">
-				<p class="max-w-3xl text-lg leading-relaxed text-white/90 lg:text-xl">
+				<p class="max-w-3xl text-[min(20px,34px)] leading-relaxed text-white/90 lg:text-xl">
 					Discover how many young learners across Pacific islands are mastering the fundamental
 					skills that open doors to their future—from reading their first stories to solving their
 					first math problems
