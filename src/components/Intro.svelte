@@ -5,6 +5,8 @@
 
 	let videoBox = $state<DOMRectReadOnly>();
 
+	let animationTimeline: gsap.core.Timeline;
+
 	let videoSrc = $state('');
 	let showVideo = $state(false);
 	let isVideoLoaded = $state(false);
@@ -169,10 +171,6 @@
 		const endX = window.innerWidth / 2 - videoBox.width / 2;
 		const endY = window.innerHeight / 2 - videoBox.height / 2;
 
-		if (animationTimeline) {
-			animationTimeline.kill();
-		}
-
 		const tl = gsap.timeline();
 
 		tl.fromTo(
@@ -218,10 +216,9 @@
 	function handleVideoCanPlayThrough(): void {
 		if (!isVideoLoaded) {
 			animationTimeline = startAnimation();
+			isVideoLoaded = true;
 		}
 	}
-
-	let animationTimeline: gsap.core.Timeline;
 
 	onMount(async () => {
 		setVideoSource();
