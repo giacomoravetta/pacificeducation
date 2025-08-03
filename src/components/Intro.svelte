@@ -5,14 +5,16 @@
 	import { MediaQuery } from 'svelte/reactivity';
 
 	let videoBox = $state<DOMRectReadOnly>();
-	let isVideoLoaded = $state(false);
+
 	let videoSrc = $state('');
-	let isDesktop = $state(false);
+	let showVideo = $state(false);
+
+	let isVideoLoaded = $state(false);
 
 	const desktopQuery = new MediaQuery('(min-width: 1024px)');
+	const mobileQuery = new MediaQuery('(max-width: 1023px)');
 
-	const shouldShowVideo = $derived(desktopQuery.current && isDesktop && videoSrc);
-	const isReadyForAnimation = $derived(shouldShowVideo && isVideoLoaded && videoBox?.width);
+	const shouldShowVideo = $derived(videoSrc && showVideo);
 
 	gsap.registerPlugin(ScrollToPlugin);
 
@@ -31,28 +33,44 @@
 		return { supportsTransparentMOV, supportsTransparentWebM };
 	}
 
+	function isChromeBasedBrowser(): boolean {
+		const userAgent = navigator.userAgent.toLowerCase();
+
+		return (
+			(userAgent.includes('chrome') ||
+				userAgent.includes('chromium') ||
+				userAgent.includes('edg/') ||
+				userAgent.includes('opr/') ||
+				userAgent.includes('samsungbrowser')) &&
+			!userAgent.includes('firefox')
+		);
+	}
+
 	function setVideoSource(): void {
-		if (!desktopQuery.current) {
-			isDesktop = false;
-			videoSrc = '';
-			return;
-		}
+		showVideo = false;
+		videoSrc = '';
 
 		const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 		if (isFirefox) {
-			isDesktop = false;
-			videoSrc = '';
-			return;
+			return; // No video for Firefox
 		}
 
-		isDesktop = true;
 		const { supportsTransparentMOV, supportsTransparentWebM } = detectVideoSupport();
 
-		if (supportsTransparentMOV) {
-			videoSrc = '/Turtle.mov';
-		} else if (supportsTransparentWebM) {
-			videoSrc = '/Turtle.webm';
-		} else {
+		// Desktop: prefer MOV, fallback to WebM
+		if (desktopQuery.current) {
+			showVideo = true;
+			if (supportsTransparentMOV) {
+				videoSrc = '/Turtle.mov';
+			} else if (supportsTransparentWebM) {
+				videoSrc = '/Turtle.webm';
+			} else {
+				videoSrc = '/Turtle.webm'; // Fallback
+			}
+		}
+		// Mobile: only show WebM on Chrome-based browsers
+		else if (mobileQuery.current && isChromeBasedBrowser() && supportsTransparentWebM) {
+			showVideo = true;
 			videoSrc = '/Turtle.webm';
 		}
 	}
@@ -142,7 +160,7 @@
 	}
 
 	function startAnimation(): gsap.core.Timeline {
-		if (!videoBox?.width || !desktopQuery.current) {
+		if (!videoBox?.width || !shouldShowVideo) {
 			return gsap.timeline();
 		}
 
@@ -151,8 +169,14 @@
 		const endX = window.innerWidth / 2 - videoBox.width / 2;
 		const endY = window.innerHeight / 2 - videoBox.height / 2;
 
+		// Kill any existing timeline to prevent restarts
+		if (animationTimeline) {
+			animationTimeline.kill();
+		}
+
 		const tl = gsap.timeline();
 
+		// Initial entrance animation
 		tl.fromTo(
 			'.turtle-video',
 			{
@@ -169,22 +193,28 @@
 				duration: 40,
 				ease: 'sine.out'
 			}
-		).to('.turtle-video', {
-			x: endX,
-			y: endY,
-			scale: 0.4,
-			opacity: 1,
-			duration: 30,
+		);
+
+		// Breathing/floating animation - separate timeline to prevent conflicts
+		const breathingTl = gsap.timeline({
 			repeat: -1,
 			yoyo: true,
+			paused: true // Start paused
+		});
+
+		breathingTl.to('.turtle-video', {
+			scale: 0.4,
+			duration: 30,
 			ease: 'power2.inOut'
 		});
 
-		return tl;
-	}
+		// Start the breathing animation when the initial animation completes
+		tl.call(() => {
+			breathingTimeline = breathingTl;
+			breathingTl.play();
+		});
 
-	function handleVideoLoad(): void {
-		isVideoLoaded = true;
+		return tl;
 	}
 
 	function handleVideoError(event: Event): void {
@@ -196,73 +226,37 @@
 		} else {
 			console.log('WebM video also failed, disabling video');
 			videoSrc = '';
-			isDesktop = false;
+			showVideo = false;
 		}
 	}
 
-	function preloadVideo(): void {
-		if (!shouldShowVideo || !videoSrc) return;
-
-		const video = document.createElement('video');
-		video.preload = 'auto';
-		video.src = videoSrc;
+	// This will be called when the video can play through without stopping
+	function handleVideoCanPlayThrough(): void {
+		if (!isVideoLoaded) {
+			console.log('Video fully loaded and ready to play');
+			animationTimeline = startAnimation();
+			isVideoLoaded = true;
+		}
 	}
 
 	let animationTimeline: gsap.core.Timeline;
+	let breathingTimeline: gsap.core.Timeline;
 
 	$effect(() => {
-		const isCurrentlyDesktop = desktopQuery.current;
-		if (isCurrentlyDesktop !== isDesktop) {
+		if (desktopQuery.current || mobileQuery.current) {
+			if (animationTimeline) {
+				animationTimeline.kill();
+			}
+			if (breathingTimeline) {
+				breathingTimeline.kill();
+			}
 			setVideoSource();
-		}
-	});
-
-	$effect(() => {
-		if (isReadyForAnimation) {
-			animationTimeline = startAnimation();
 		}
 	});
 
 	onMount(async () => {
 		setVideoSource();
-
-		const arrowTimeout = setTimeout(createArrowAnimation, 500);
-
-		if (shouldShowVideo && videoSrc) {
-			preloadVideo();
-
-			const videoTimeout = setTimeout(() => {
-				const videoElement = document.querySelector('.turtle-video') as HTMLVideoElement;
-
-				if (videoElement) {
-					if (videoElement.readyState >= 3) {
-						isVideoLoaded = true;
-					}
-
-					videoElement.addEventListener('canplaythrough', handleVideoLoad);
-					videoElement.addEventListener('loadeddata', handleVideoLoad);
-					videoElement.addEventListener('error', handleVideoError);
-				}
-			}, 100);
-
-			return () => {
-				clearTimeout(arrowTimeout);
-				clearTimeout(videoTimeout);
-			};
-		}
-
-		return () => {
-			clearTimeout(arrowTimeout);
-
-			// Cleanup animations
-			if (animationTimeline) {
-				animationTimeline.kill();
-			}
-			gsap.killTweensOf('.turtle-video');
-			gsap.killTweensOf('.call-to-arrow');
-			gsap.killTweensOf('.call-to-arrow svg');
-			gsap.killTweensOf('.call-to-arrow > div');
-		};
+		createArrowAnimation();
 	});
 </script>
 
@@ -279,7 +273,7 @@
 				webkit-playsinline="true"
 				preload="auto"
 				class="turtle-video absolute origin-center opacity-0"
-				onloadeddata={handleVideoLoad}
+				oncanplaythrough={handleVideoCanPlayThrough}
 				onerror={handleVideoError}
 				style="will-change: transform; transform: translateZ(0);"
 			>
